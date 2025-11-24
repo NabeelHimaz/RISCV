@@ -5,6 +5,7 @@ module pc_module #(
     input  logic rst,
     input  logic PCsrc,
     input  logic [DATA_WIDTH-1:0] immOp,
+
     output logic [DATA_WIDTH-1:0] PC
 );
 
@@ -30,9 +31,11 @@ module pc_module #(
     // Program Counter Register
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            PC <= {DATA_WIDTH{1'b0}};
+            PC <= 32'hBFC00000; // reset address
         else
             PC <= next_PC;
     end
     
 endmodule
+
+
