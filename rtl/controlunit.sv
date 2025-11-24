@@ -25,8 +25,8 @@ module controlunit #(
     logic [2:0]     funct3;
 
     assign op =     Instr[6:0];
-    assign func3 =  Instr[14:12];
-    assign funct7 = Instr[30];
+    assign funct3 =  Instr[14:12];
+    assign funct7_5 = Instr[30];
 
     always_comb begin 
         case(op)
