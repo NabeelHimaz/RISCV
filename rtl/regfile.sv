@@ -36,6 +36,6 @@ module regfile #(
     end
 
     //output of regfile for testing purposes
-    assign a0 = regs[10];
+    assign a0_o = regs[10];
 
 endmodule
