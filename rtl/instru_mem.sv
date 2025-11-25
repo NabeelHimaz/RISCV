@@ -1,4 +1,4 @@
-module rom#(    
+module instru_mem#(    
     parameter ADDR_WIDTH = 32,
     parameter DATA_WIDTH = 8,
 )(
@@ -9,7 +9,8 @@ module rom#(
 logic [DATA_WIDTH-1:0] rom_mem [32'hBFC00FFF : 32'hBFC00000];
 
 initial begin
-    $readmemh("rom.mem", rom_mem); // Load ROM contents from external file yet to be defined
+    $readmemh("instru_mem.mem", rom_mem); // Load ROM contents from external file yet to be defined#
+    $display ("Loaded Instru_mem.");
 end
 
 always_comb begin
