@@ -13,8 +13,8 @@ module data_mem #(
     logic [DATA_WIDTH-1:0] ram_array [17'h1FFFF : 17'h0]; 
 
     initial begin 
-        $readmemh("ram.mem", ram_array, 17'h10000);
-        $display ("Loaded RAM.");
+        $readmemh("data_mem.mem", ram_array, 17'h10000);
+        $display ("Loaded data_mem.");
     end;
 
     assign read_data_o = {ram_array[addr_i[16:0] + 3],ram_array[addr_i[16:0] + 2],ram_array[addr_i[16:0] + 1],ram_array[addr_i[16:0]]};
