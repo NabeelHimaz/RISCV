@@ -12,7 +12,7 @@ module controlunit #(
     output logic                    MemWrite_o,    
     output logic [1:0]              ResultSrc_o,
     output logic [1:0]              MemType_o,
-    output logic                    MemSign_o,
+    output logic                    MemSign_o
 );
 
     logic [6:0]     op;

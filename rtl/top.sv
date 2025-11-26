@@ -28,6 +28,8 @@ controlunit controlunit (
     .PCSrc_o(PCSrc),
     .MemWrite_o(MemWrite),    
     .ResultSrc_o(ResultSrc)
+    .MemSign_o(MemSign),
+    .MemType_o(MemType)
 );
 
 logic [4:0] A1;
