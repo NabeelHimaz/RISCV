@@ -8,6 +8,7 @@ module execute #(
     input logic [DATA_WIDTH-1:0] PCPlus4E_i,
     input logic [3:0] ALUCtrl_i,
     input logic ALUSrc_i,
+    input logic JumpCtrl_i  //This deals with the jump instruction 
 
     output logic [DATA_WIDTH-1:0] ALUResultE_o,
     output logic [DATA_WIDTH-1:0] WriteDataE_o,
@@ -17,8 +18,11 @@ module execute #(
 );
 
 logic [DATA_WIDTH-1:0] SrcBE;
+logic [DATA_WIDTH-1:0] PC_TargetE; //PC_TargetE before it goes into mux with JUMP instruction 
 
 assign SrcBE = (ALUSrc_i) ? ImmExtE_i : RD2E_i; //MUX for the second input into the ALU
+
+
 
 ALU ALU(
     .srcA_i(RD1E_i),
@@ -32,8 +36,10 @@ ALU ALU(
 //output logic
 always_comb begin
     PCPlus4E_o = PCPlus4E_i;
-    PCTargetE_o = ImmExtE_i + PCE_i;
+    PCTargetE = ImmExtE_i + PCE_i;
     WriteDataE_o = RD2E_i;
 end
+
+assign PCTargetE_o = (JumpCtrl_i) ? PC_TargetE : ALUResult_o; //mux for jump instruction 
 
 endmodule
