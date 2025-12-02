@@ -43,6 +43,7 @@ ALU ALU(
 );
 
 //output logic
+logic [DATA_WIDTH-1:0] PCTargetE;
 always_comb begin
     PCPlus4E_o = PCPlus4E_i;
     PCTargetE = ImmExtE_i + PCE_i;

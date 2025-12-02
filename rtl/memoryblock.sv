@@ -13,7 +13,7 @@ module memoryblock #(
     output logic [DATA_WIDTH-1:0] ALUResultM_o,
     output logic [DATA_WIDTH-1:0] RD_o,
     output logic [DATA_WIDTH-1:0] PCPlus4M_o,
-    output logic [4:0]            RdM_o;
+    output logic [4:0]            RdM_o
 );
 
 data_mem_top datamem(
@@ -26,7 +26,7 @@ data_mem_top datamem(
 
     .read_data_o(RD_o)
 
-)
+);
 
 assign ALUResultM_o = ALUResultM_i; 
 assign PCPlus4M_o = PCPlus4M_i;

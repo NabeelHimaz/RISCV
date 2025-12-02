@@ -1,11 +1,11 @@
 module data_mem_i #(
-    parameter ADDR_WIDTH = 32,
-)(
+    parameter ADDR_WIDTH = 32
+) (
     input logic [ADDR_WIDTH-1:0]    read_data_i,
     input logic [ADDR_WIDTH-1:0]    write_data_i,
     input logic [ADDR_WIDTH-1:0]    addr_i,
     input logic [1:0]               mem_type_i, 
-    output logic [ADDR_WIDTH-1:0]   write_data_o,
+    output logic [ADDR_WIDTH-1:0]   write_data_o
 );
 
 logic [1:0] byte_offset;

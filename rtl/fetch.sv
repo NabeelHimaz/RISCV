@@ -31,9 +31,9 @@ pc_module #(
     );
 
 instrmem instruction_memory (
-    .A_i(PC),
+    .addr_i(PC),
     
-    .RD_o(Instr_o)
+    .read_data_o(Instr_o)
 );
 
 assign A1_o = Instr_o[19:15];

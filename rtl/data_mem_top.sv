@@ -1,7 +1,7 @@
-module data_mem_top # (
+module data_mem_top #(
     parameter ADDR_WIDTH = 32
               
-)(
+) (
     input  logic                          write_en_i,
     input  logic                          clk_i,
     input  logic     [1:0]                mem_type_i,
@@ -35,7 +35,7 @@ data_mem data_mem(
     .read_data_o(Read_Data)
 );
 
-data_mem data_mem_o(
+data_mem_o data_mem_o(
     .mem_type_i(mem_type_i),
     .mem_sign_i(mem_sign_i),
     .addr_i(addr_i_i),

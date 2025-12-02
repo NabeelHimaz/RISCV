@@ -3,7 +3,7 @@ module data_mem_o #(
               ADDR_WIDTH = 32 
              
 
-)(
+) (
     input  logic    [ADDR_WIDTH-1:0]     read_data_i,
     input  logic    [ADDR_WIDTH-1:0]     addr_i,
     input  logic    [1:0]                mem_type_i,

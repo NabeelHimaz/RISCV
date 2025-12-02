@@ -31,7 +31,7 @@ controlunit controlunit (
     .ImmSrc_o(ImmSrc),       
     .PCSrc_o(PCSrc),
     .MemWrite_o(MemWrite),    
-    .ResultSrc_o(ResultSrc)
+    .ResultSrc_o(ResultSrc),
     .MemSign_o(MemSign),
     .MemType_o(MemType),
     .JumpSrc_o(JumpSrc),
@@ -64,7 +64,7 @@ logic [DATA_WIDTH-1:0] PCD;
 logic [DATA_WIDTH-1:0] RD1;
 logic [DATA_WIDTH-1:0] RD2;
 logic [DATA_WIDTH-1:0] ImmExt;
-logic [DATA_WIDTH-1:0] RdD;
+logic [4:0]           RdD;
 
 decode decode(
     .ImmSrc_i(ImmSrc),
@@ -73,7 +73,7 @@ decode decode(
     .clk(clk),
     .A1_i(A1),
     .A2_i(A2),
-    .A3_i(A3),
+    .RdF_i(A3),
     .instr_i(Instr),
     .WD3_i(ResultW),
     .WE3_i(RegWrite),
@@ -92,8 +92,8 @@ logic [DATA_WIDTH-1:0] PCPlus4E;
 logic [DATA_WIDTH-1:0] ALUResult;
 logic [DATA_WIDTH-1:0] WriteData;
 logic [DATA_WIDTH-1:0] PCTargetE;
-logic [DATA_WIDTH-1:0] RdE;
-logic branchTaken;
+logic [4:0]           RdE;
+logic                 branchTaken;
 
 execute execute(
     .RD1E_i(RD1),
@@ -119,7 +119,7 @@ execute execute(
 logic [DATA_WIDTH-1:0] PCPlus4M;
 logic [DATA_WIDTH-1:0] ALUResultM;
 logic [DATA_WIDTH-1:0] RDM;
-logic [DATA_WIDTH-1:0] RdM;
+logic [4:0]           RdM;
 
 
 memoryblock memory(
@@ -139,7 +139,7 @@ memoryblock memory(
 );
 
 logic [DATA_WIDTH-1:0] ResultW;
-logic [DATA_WIDTH-1:0] RdW;
+logic [4:0]           RdW;
 
 writeback writeback(
     .ALUResultM_i(ALUResultM),

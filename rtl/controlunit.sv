@@ -105,6 +105,9 @@ module controlunit #(
                     3'b101: Branch_o = 3'b101;
                     3'b110: Branch_o = 3'b110;
                     3'b111: Branch_o = 3'b111;
+
+                    default: Branch_o = 3'b010;
+                endcase
             end
 
             7'd103: begin               //jalr   
