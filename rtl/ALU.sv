@@ -8,8 +8,7 @@ module ALU #(
     input logic  [2:0]              branch_i,
 
     output logic [DATA_WIDTH-1:0]   ALUResult_o,
-    output logic                    branchTaken_o,        
-    output logic                    Zero_o  
+    output logic                    branchTaken_o
 );
 
     always_comb begin
@@ -46,7 +45,6 @@ module ALU #(
         
             default: ALUResult_o = 32'd0;
         endcase
-        Zero_o = (ALUResult_o == 0) ? 1'b1 : 1'b0; 
 
         case(branch_i)
 
