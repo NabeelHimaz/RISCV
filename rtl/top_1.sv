@@ -50,7 +50,8 @@ logic [4:0]            RDW;
 logic       RegWriteW;
 logic [1:0] ResultSrcW;
 
-// Fetch Stage
+
+/////////////////// Fetch Stage //////////////////////
 logic [4:0] unused_A1, unused_A2, unused_A3;
 
 fetch fetch(
@@ -73,7 +74,8 @@ pipereg_FD_1 #(DATA_WIDTH) fd_reg (
     .InstrD(InstrD), .PCD(PCD), .PCPlus4D(PCPlus4D)
 );
 
-// Decode Stage
+
+///////////////// Decode Stage /////////////////
 logic ctrl_PCSrc_unused; 
 
 controlunit controlunit (
@@ -141,7 +143,7 @@ pipereg_DE_1 #(DATA_WIDTH) de_reg (
     .RD1E(RD1E), .RD2E(RD2E), .PCE(PCE), .ImmExtE(ImmExtE), .PCPlus4E(PCPlus4E), .RDE(RDE)
 );
 
-// Exectute Stage
+////////////////////// Exectute Stage ////////////////////
 logic [DATA_WIDTH-1:0] pcplus4_dummy_e;
 
 execute execute(
@@ -180,7 +182,7 @@ pipereg_EM_1 #(DATA_WIDTH) em_reg (
     .ALUResultM(ALUResultM), .WriteDataM(WriteDataM), .PCPlus4M(PCPlus4M), .RDM(RDM)
 );
 
-//Memory stage
+/////////////////// Memory Stage ////////////////////
 logic [DATA_WIDTH-1:0] ALUResultW_internal, PCPlus4W_internal;
 
 memoryblock memory(
@@ -212,7 +214,7 @@ pipereg_MW_1 #(DATA_WIDTH) mw_reg (
     .ALUResultW(ALUResultW), .ReadDataW(ReadDataW), .PCPlus4W(PCPlus4W), .RDW(RDW)
 );
 
-// Writeback Stage
+////////////////////// Writeback Stage ////////////////////
 writeback writeback(
     .ALUResultM_i(ALUResultW),
     .ReadDataW_i(ReadDataW),
