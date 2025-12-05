@@ -53,7 +53,7 @@ run_test() {
     echo -n "${YELLOW}Testing: ${test_name}...${RESET} "
     
     # Step 1: Compile the assembly file
-    ./compile.sh "$asm_file" > /dev/null 2>&1
+    ./assemble.sh "$asm_file" > /dev/null 2>&1
     
     if [ $? -ne 0 ]; then
         echo "${RED}COMPILE FAILED${RESET}"

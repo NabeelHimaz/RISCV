@@ -81,7 +81,15 @@ for file in "${files[@]}"; do
         ((fails++))
     fi
 
+    # Move waveform file to test output if it exists
+    if [ -f "waveform.vcd" ]; then
+        test_basename=$(basename "$file" .cpp)
+        mkdir -p test_out/${test_basename}
+        mv waveform.vcd test_out/${test_basename}/
+        echo "${GREEN}Waveform saved to test_out/${test_basename}/waveform.vcd${RESET}"
+    fi
+
 done
 
 # Save obj_dir in test_out
-mv obj_dir test_out/
+mv obj_dir test_out/ 2>/dev/null
