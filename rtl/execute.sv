@@ -13,26 +13,58 @@ module execute #(
     input logic [4:0]               RdD_i,
     input logic [2:0]               BranchSrc_i, //controls branching MUX
 
+    
+    input logic [DATA_WIDTH-1:0]    ResultW_i,   //result from writeback
+    input logic [DATA_WIDTH-1:0]    ALUResultM_i,
+
+
+    //from hazard unit
+    input logic [1:0]               ForwardAEctrl_i,
+    input logic [1:0]               ForwardBEctrl_i,
+
+
     output logic [DATA_WIDTH-1:0]   ALUResultE_o,
     output logic [DATA_WIDTH-1:0]   WriteDataE_o,
     output logic [DATA_WIDTH-1:0]   PCPlus4E_o,
     output logic [DATA_WIDTH-1:0]   PCTargetE_o,
     output logic [4:0]              RdE_o,
-    output logic                    branchTaken_o
+    output logic                    branchTaken_o 
 );
 
-logic [DATA_WIDTH-1:0]  srcAE;
+logic [DATA_WIDTH-1:0]  SrcAE;
+
+//mux for SrcAE based on hazard unit 
+always_comb begin
+    case(ForwardAEctrl_i)
+
+    2'b00: SrcAE = RD1E_i;
+    2'b01: SrcAE = ResultW_i;
+    2'b10: SrcAE = ALUResultM_i;
+
+    default: SrcAE = RD1E_i;
+    endcase 
+end
+
 logic [DATA_WIDTH-1:0]  SrcBE;
 
+//mux for srcBE based on hazard unit 
+always_comb begin
+    case(ForwardBEctrl_i)
 
-assign srcAE = (ALUSrcA_i) ? PCE_i : RD1E_i; //mux for choosing 1st input into ALU 
+    2'b00: WriteDataE_o = RD2E_i;
+    2'b01: WriteDataE_o = ResultW_i;
+    2'b10: WriteDataE_o = ALUResultM_i;
 
-assign SrcBE = (ALUSrcB_i) ? ImmExtE_i : RD2E_i; //MUX for the second input into the ALU
+    default: WriteDataE_o = RD2E_i;
+    endcase 
+end
+
+assign SrcBE = (ALUSrcB_i) ? ImmExtE_i : WriteDataE_o; //MUX for the second input into the ALU
 
 
 
 ALU ALU(
-    .srcA_i(srcAE),
+    .srcA_i(SrcAE),
     .srcB_i(SrcBE),
     .ALUCtrl_i(ALUCtrl_i),
     .branch_i(BranchSrc_i),
@@ -46,7 +78,6 @@ logic [DATA_WIDTH-1:0] PCTargetE;
 always_comb begin
     PCPlus4E_o = PCPlus4E_i;
     PCTargetE = ImmExtE_i + PCE_i;
-    WriteDataE_o = RD2E_i;
 end
 
 assign PCTargetE_o = (JumpCtrl_i) ? ALUResultE_o : PCTargetE; //mux for jump instruction (switched order when debugging)
