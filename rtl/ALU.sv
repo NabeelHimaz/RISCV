@@ -5,9 +5,10 @@ module ALU #(
     input  logic [DATA_WIDTH-1:0]   srcA_i,
     input  logic [DATA_WIDTH-1:0]   srcB_i,
     input  logic [3:0]              ALUCtrl_i,
+    input logic  [2:0]              branch_i,
 
-    output logic [DATA_WIDTH-1:0]   ALUResult_o
-    //where is zero flag?
+    output logic [DATA_WIDTH-1:0]   ALUResult_o,
+    output logic                    branchTaken_o
 );
 
     always_comb begin
@@ -44,7 +45,32 @@ module ALU #(
         
             default: ALUResult_o = 32'd0;
         endcase
+
+        case(branch_i)
+
+
+            //BEQ 
+            3'b000: branchTaken_o = (srcA_i == srcB_i);
+        
+            //BNE
+            3'b001: branchTaken_o = (srcA_i != srcB_i);
+            
+            //BLT
+            3'b100: branchTaken_o = ($signed(srcA_i) < $signed(srcB_i));
+            
+            //BGE
+            3'b101: branchTaken_o = ($signed(srcA_i) >= $signed(srcB_i));
+            
+            //BLTU- unsigned
+            3'b110: branchTaken_o = (srcA_i < srcB_i);
+            
+            //BGEU- unsigned
+            3'b111: branchTaken_o = (srcA_i >= srcB_i);
+            
+            default: branchTaken_o = 1'b0;
+
+
+        endcase
     end
 
 endmodule
-
