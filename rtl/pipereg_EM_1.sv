@@ -35,7 +35,7 @@ module pipereg_EM_1 #(
         end
         else if (en) begin
             RegWriteM  <= RegWriteE; MemWriteM <= MemWriteE; MemSignM <= MemSignE;
-            ResultSrcM <= ResultSrcE;MemTypeM  <= MemTypeE;
+            ResultSrcM <= ResultSrcE; MemTypeM  <= MemTypeE;
             
             ALUResultM <= ALUResultE;
             WriteDataM <= WriteDataE;
