@@ -189,30 +189,37 @@ execute execute(
     .PCE_i(PCE),
     .ImmExtE_i(ImmExtE),
     .PCPlus4E_i(PCPlus4E),
-    .ALUCtrl_i(ALUCtrlE),
-    .ALUSrcB_i(ALUSrcE),
-    .ALUSrcA_i(1'b0),
-    .JumpCtrl_i(JumpE),
     .RdD_i(RDE),
     .BranchSrc_i({1'b0, BranchE}),
     .Rs1D_i(A1D),
     .Rs2D_i(A2D),
     .ResultW_i(ResultW),
     .ALUResultM_i(ALUResultM),
+    
+    // Control inputs (pipelined from decode)
+    .RegWriteE_i(RegWriteE),
+    .ResultSrcE_i(ResultSrcE),
+    .MemWriteE_i(MemWriteE),
+    .JumpE_i(JumpE),
+    .BranchE_i(BranchE),
+    .ALUCtrlE_i(ALUCtrlE),
+    .ALUSrcE_i(ALUSrcE),
+    
+    // From hazard unit
     .ForwardAEctrl_i(ForwardAE),
     .ForwardBEctrl_i(ForwardBE),
 
+    // Outputs
     .Rs1E_o(Rs1E_out),
     .Rs2E_o(Rs2E_out),
     .ALUResultE_o(ALUResultE),
     .WriteDataE_o(WriteDataE),
     .PCPlus4E_o(pcplus4_dummy_e),
-    .PCTargetE_o(PCTargetE),
     .RdE_o(RdE_out),
-    .branchTaken_o(BranchTakenE)
+    .branchTaken_o(BranchTakenE),
+    .PCTargetE_o(PCTargetE),
+    .PCSrcE_o(PCSrcE)
 );
-
-assign PCSrcE = BranchTakenE | JumpE;
 
 // E/M Pipeline Register Module
 pipereg_EM_1 #(DATA_WIDTH) em_reg (
