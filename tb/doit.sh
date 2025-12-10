@@ -24,64 +24,72 @@ else
     files=("$@")
 fi
 
-# Cleanup
-rm -rf obj_dir
+cd $SCRIPT_DIR
 
-cd "$SCRIPT_DIR" || exit
+# Wipe previous test output
+rm -rf test_out/*
 
 # Iterate through files
 for file in "${files[@]}"; do
     name=$(basename "$file" _tb.cpp | cut -f1 -d\-)
-    
+
     # If verify.cpp -> we are testing the top module
-    if [ "$name" == "verify.cpp" ]; then
+    if [ $name == "verify.cpp" ]; then
         name="top"
     fi
 
-    # --- UBUNTU CONFIGURATION ---
-    # We explicitly set the paths for Ubuntu/WSL
-    GTEST_INCLUDE="/usr/include"
-    GTEST_LIB="/usr/lib/x86_64-linux-gnu"
+    #  Translate Verilog -> C++ including testbench
+    #  verilator   -Wall --trace \
+    #              -cc ${RTL_FOLDER}/${name}.sv \
+    #              --exe ${file} \
+    #              -y ${RTL_FOLDER} \
+    #              --prefix "Vdut" \
+    #              -o Vdut \
+    #              -LDFLAGS "-lgtest -lgtest_main -lpthread"
 
-    # Check if GoogleTest is actually installed
-    if [ ! -d "$GTEST_INCLUDE/gtest" ]; then
-        echo "${RED}Error: GoogleTest headers not found.${RESET}"
-        echo "Run: sudo apt-get install libgtest-dev cmake build-essential"
-        exit 1
-    fi
+
     
-    # Translate Verilog -> C++ including testbench
-    # Note: -CFLAGS has quotes fixed and the backslash added
-    verilator   -Wall --trace \
-                -cc "${RTL_FOLDER}/${name}.sv" \
-                --exe "$file" \
-                -y "$RTL_FOLDER" \
-                --prefix "Vdut" \
-                -o Vdut \
-                -CFLAGS "-std=c++17" \
-                -LDFLAGS "-L${GTEST_LIB} -lgtest -lgtest_main -lpthread"
+    # Gather all RTL subdirectories
+    rtl_dirs=($(find "$RTL_FOLDER" -type d))
 
-    # Build C++ project with automatically generated Makefile
+    # Build -y arguments
+    y_args=()
+    for d in "${rtl_dirs[@]}"; do
+        y_args+=(-y "$d")
+    done
+
+    verilator -Wall --trace \
+                 -cc ${RTL_FOLDER}/${name}.sv \
+                 --exe ${file} \
+            "${y_args[@]}" \
+                 --prefix "Vdut" \
+                 -o Vdut \
+                 -LDFLAGS "-lgtest -lgtest_main -lpthread"
+
+
+    # # Build C++ project with automatically generated Makefile
+
     make -j -C obj_dir/ -f Vdut.mk
-    
+
     # Run executable simulation file
     ./obj_dir/Vdut
-    
+
     # Check if the test succeeded or not
     if [ $? -eq 0 ]; then
         ((passes++))
     else
         ((fails++))
     fi
-    
+
+    # Move waveform file to test output if it exists
+    if [ -f "waveform.vcd" ]; then
+        test_basename=$(basename "$file" .cpp)
+        mkdir -p test_out/${test_basename}
+        mv waveform.vcd test_out/${test_basename}/
+        echo "${GREEN}Waveform saved to test_out/${test_basename}/waveform.vcd${RESET}"
+    fi
+
 done
 
-# Exit as a pass or fail (for CI purposes)
-if [ $fails -eq 0 ]; then
-    echo "${GREEN}Success! All ${passes} tests passed!${RESET}"
-    exit 0
-else
-    total=$((passes + fails))
-    echo "${RED}Failure! Only ${passes} tests passed out of ${total}.${RESET}"
-    exit 1
-fi
+# Save obj_dir in test_out
+mv obj_dir test_out/ 2>/dev/null

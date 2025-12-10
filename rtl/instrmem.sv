@@ -1,5 +1,4 @@
-module instrmem#(    
-
+module instrmem #(    
     parameter ADDR_WIDTH = 32,
     parameter DATA_WIDTH = 8
 ) (
@@ -10,8 +9,7 @@ module instrmem#(
 logic [DATA_WIDTH-1:0] rom_mem [32'hBFC00FFF : 32'hBFC00000];
 
 initial begin
-    $readmemh("instru_mem.mem", rom_mem); // Load ROM contents from external file yet to be defined#
-    $display ("Loaded Instru_mem.");
+    $readmemh("program.hex", rom_mem); // Load ROM contents from external file yet to be defined
 end
 
 always_comb begin
