@@ -35,7 +35,7 @@ for file in "${files[@]}"; do
     name=$(basename "$file" _tb.cpp | cut -f1 -d\-)
     
     # If verify.cpp -> we are testing the top module
-    if [[ "$name" == "verify.cpp" || "$name" == "execute_pdf.cpp" ]]; then
+    if [[ "$name" == "verify.cpp" || "$name" == "execute_pdf.cpp" || "$name" == "execute_f1.cpp" ]]; then
         name="top"
     fi
 

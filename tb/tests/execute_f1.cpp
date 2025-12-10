@@ -10,17 +10,11 @@
 
 #include "vbuddy.cpp"
 
-#define PDF_SIM_CYCLES 2000000
+// f1 lights are visual, so we don't need millions of cycles.
+// 1000 is plenty to watch the sequence loop a few times.
+#define F1_SIM_CYCLES 1000 
 
-//fast forward thresholds allow us to skip execution on vbuddy to a target
-//in order to speed up uneventful part of simulation with cpu initialising/data is being loaded in
-
-// gaussian
-#define FAST_FORWARD_THRESHOLD 123500
-//noisy #define FAST_FORWARD_THRESHOLD 204700
-//triangle #define FAST_FORWARD_THRESHOLD 317000
-
-class PdfTestbench : public ::testing::Test {
+class F1Testbench : public ::testing::Test {
 public:
     void SetUp() override {
         context_ = new VerilatedContext;
@@ -36,9 +30,10 @@ public:
         std::ignore = system("touch data.hex");
     }
 
+    // f1 program generates patterns internally, so we don't need to load a data file.
+    // kept empty for compatibility.
     void setData(const std::string &data_file) {
-        std::cout << "loading data file: " << data_file << std::endl;
-        std::ignore = system(("cp " + data_file + " data.hex").c_str());
+        // no-op
     }
 
     void initSimulation() {
@@ -52,11 +47,18 @@ public:
         std::ignore = system(("mkdir -p test_out/" + name_).c_str());
         tfp_->open(vcd_path.c_str());
 
+        // open vbuddy immediately for visual feedback
+        if (vbdOpen() != 1) {
+            std::cout << "error: failed to open vbuddy" << std::endl;
+            exit(1);
+        }
+        
+        vbdHeader("F1 Lights");
+
         top_->clk = 1;
         top_->rst = 1;
         top_->trigger = 0;
         
-        //run a few reset cycles (using the basic clock loop manually here to avoid triggering plot logic)
         for(int i=0; i<10; i++) {
             top_->eval(); 
             top_->clk = !top_->clk; 
@@ -69,10 +71,8 @@ public:
     }
 
     void runSimulation(int cycles = 1) {
-        bool vbuddy_connected = false;
-
         for (int i = 0; i < cycles; i++) {
-            //standard clocking
+            // cycle the clock
             for (int clk = 0; clk < 2; clk++) {
                 top_->eval();
                 tfp_->dump(2 * ticks_ + clk);
@@ -80,27 +80,11 @@ public:
             }
             ticks_++;
             
-            //check if we just hit the threshold
-            if (ticks_ == FAST_FORWARD_THRESHOLD) {
-                std::cout << "fast forward complete. connecting to vbuddy..." << std::endl;
-                
-                if (vbdOpen() != 1) {
-                    std::cout << "error: failed to open vbuddy" << std::endl;
-                    exit(1);
-                }
-                vbdHeader("pdf program");
-                vbuddy_connected = true;
-            }
+            // display the value of a0 on the led bar.
+            // masking with 0xFF ensures we only send the bottom 8 bits (since bar is 8-bit).
+            vbdBar(top_->a0 & 0xFF);
+            vbdCycle(i);
 
-            //only plot if we are past the threshold and connected
-            if (vbuddy_connected) {
-                //plot a0 (0-255)
-                vbdPlot(int(top_->a0), 0, 255);
-                vbdCycle(i);
-                std::cout << int(top_->a0) << std::endl;
-            }
-
-            //check for exit
             if (Verilated::gotFinish()) {
                 std::cout << "verilog $finish encountered" << std::endl;
                 return;
@@ -109,14 +93,15 @@ public:
     }
 
     void TearDown() override {
-        //close vbuddy if it was opened
         vbdClose();
 
         top_->final();
         tfp_->close();
 
-        std::ignore = system(("mv data.hex test_out/" + name_ + "/data.hex").c_str());
+        // only move program.hex, data.hex might not exist or be empty
         std::ignore = system(("mv program.hex test_out/" + name_ + "/program.hex").c_str());
+        // suppress error if data.hex is missing
+        std::ignore = system(("mv data.hex test_out/" + name_ + "/data.hex 2>/dev/null").c_str());
 
         if (top_) delete top_;
         if (tfp_) delete tfp_;
@@ -136,26 +121,17 @@ protected:
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     
-    PdfTestbench tb;
+    F1Testbench tb;
     
     tb.SetUp();
-    tb.setupTest("5_pdf");
-    tb.setData("reference/gaussian.mem");
+    tb.setupTest("6_f1"); 
+    
     tb.initSimulation();
     
-    std::cout << "running simulation..." << std::endl;
-    std::cout << "fast forwarding first " << FAST_FORWARD_THRESHOLD << " cycles..." << std::endl;
-    
-    tb.runSimulation(PDF_SIM_CYCLES);
+    std::cout << "running f1 light sequence..." << std::endl;
+    tb.runSimulation(F1_SIM_CYCLES);
     
     std::cout << "simulation finished." << std::endl;
-    std::cout << "final result in a0: " << tb.getA0() << std::endl;
-    
-    if (tb.getA0() == 15363) {
-        std::cout << "PASSED: output matches expected pdf sum." << std::endl;
-    } else {
-        std::cout << "FAILED: output does not match." << std::endl;
-    }
 
     tb.TearDown();
 
