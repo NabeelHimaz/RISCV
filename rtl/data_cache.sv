@@ -62,9 +62,10 @@ module data_cache #(
     always_ff @(posedge clk_i) begin
         if (rst_i) begin
             for (i = 0; i < NUM_SETS; i = i + 1) begin
-                valid_array_0[i] = 1'b0;   // Use = not <=
-                valid_array_1[i] = 1'b0;   // Use = not <=
-                lru_array[i]     = 1'b0;   // Use = not <=
+                // check if it should be <= or =
+                valid_array_0[i] <= 1'b0;   // Use = not <=
+                valid_array_1[i] <= 1'b0;   // Use = not <=
+                lru_array[i]     <= 1'b0;   // Use = not <=
 end
         end else begin
             
