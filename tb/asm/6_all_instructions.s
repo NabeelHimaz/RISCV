@@ -1,5 +1,5 @@
 # Comprehensive RISC-V 32I Instruction Test
-# -----------------------------------------
+# -----------------------------------------------------
 # Validates ALU ops, Memory ops, and Immediate handling.
 
     # ---------------------------------------------------
@@ -59,15 +59,16 @@
     addi x26, x0, 10
     addi x27, x0, 10
     
+    # BEQ TEST
     beq  x26, x27, branch_target
-    addi x28, x0, 0xBAD  # Should skip this
+    addi x28, x0, 0xB    # 0xB = "Bad" marker (Should skip this)
     
 branch_target:
-    addi x28, x0, 0xGOOD # x28 = 0xGOOD (placeholder for low bits)
+    addi x28, x0, 0xD    # 0xD = "Done/Good" marker
     
-    # BLT test
+    # BLT TEST
     blt  x3, x1, jump_end # -15 < 10, should take branch
-    addi x29, x0, 0xBAD
+    addi x29, x0, 0xB    # 0xB = "Bad" marker
 
 jump_end:
     jal  x0, program_end
@@ -77,13 +78,3 @@ jump_end:
     # ---------------------------------------------------
 program_end:
     beq x0, x0, program_end
-
-# ---------------------------------------------------
-# FINAL CHECKLIST
-# ---------------------------------------------------
-# x4  = 30
-# x5  = 10
-# x10 = 1024
-# x12 = -8 (0xFFFFFFF8)
-# x22 = 0x1000
-# x25 = 0x2000

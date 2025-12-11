@@ -63,9 +63,9 @@ module data_cache #(
         if (rst_i) begin
             for (i = 0; i < NUM_SETS; i = i + 1) begin
                 // check if it should be <= or =
-                valid_array_0[i] <= 1'b0;   // Use = not <=
-                valid_array_1[i] <= 1'b0;   // Use = not <=
-                lru_array[i]     <= 1'b0;   // Use = not <=
+                valid_array_0[i] = 1'b0;   // Use = not <=
+                valid_array_1[i] = 1'b0;   // Use = not <=
+                lru_array[i]     = 1'b0;   // Use = not <=
 end
         end else begin
             
