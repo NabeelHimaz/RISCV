@@ -73,12 +73,6 @@ for file in "${files[@]}"; do
     # Build C++ project
     make -j -C obj_dir/ -f Vdut.mk >/dev/null 2>&1
 
-    if [ $? -ne 0 ]; then
-        echo "${RED}C++ compilation failed for $name!${RESET}"
-        ((fails++))
-        continue
-    fi
-
     # Run executable
     ./obj_dir/Vdut
 

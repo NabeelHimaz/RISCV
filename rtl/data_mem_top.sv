@@ -19,7 +19,11 @@ module data_mem_top #(
     logic                  ram_write_en;
     logic [ADDR_WIDTH-1:0] ram_write_data;
     logic [ADDR_WIDTH-1:0] ram_read_data;
-    logic                  cache_hit; // Use for debugging
+
+    /* verilator lint_off UNUSED */
+    logic                  cache_hit;            // Use for debugging
+    logic [14:0]           unused_bits;
+    /* verilator lint_on UNUSED */
 
     assign addr_aligned = {addr_i[31:2], {2'b00}};
     assign unused_bits = addr_i[31:17]; // removes error

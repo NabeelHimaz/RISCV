@@ -5,7 +5,9 @@ module data_mem #(
 ) (
     input  logic                     clk_i,
     input  logic                     write_en_i,
+    /* verilator lint_off UNUSED */
     input  logic [ADDR_WIDTH-1:0]    addr_i,
+    /* verilator lint_on UNUSED */
     input  logic [ADDR_WIDTH-1:0]    write_data_i,
     output logic [ADDR_WIDTH-1:0]    read_data_o
 );
@@ -21,7 +23,7 @@ module data_mem #(
     end;
 
     assign read_data_o = {ram_array[addr_i[16:0] + 3],ram_array[addr_i[16:0] + 2],ram_array[addr_i[16:0] + 1],ram_array[addr_i[16:0]]};
-    
+
     always_ff @(negedge clk_i) begin
         if (write_en_i) begin
             ram_array[addr_i[16:0]]     <= write_data_i[7:0];

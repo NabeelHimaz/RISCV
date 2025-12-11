@@ -267,6 +267,7 @@ memoryblock memory(
     .PCPlus4M_i(PCPlus4M),
     .MemWrite_i(MemWriteM),
     .clk(clk),
+    .rst_i(rst),
     .MemSign_i(MemSignM),
     .MemType_i(MemTypeM),
     .RdE_i(RDM), 

@@ -10,7 +10,9 @@ module hazardunit (
     input logic         RegWriteM_i,
     input logic [4:0]   RdW_i,
     input logic         RegWriteW_i,
+    /* verilator lint_off UNUSED */
     input logic [31:0]  Instr_i,        // dummy input to match top.sv connection
+    /* verilator lint_on UNUSED */
 
     output logic        StallF_o,
     output logic        StallD_o,

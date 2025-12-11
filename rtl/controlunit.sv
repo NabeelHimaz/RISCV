@@ -1,7 +1,9 @@
 module controlunit #(
     parameter DATA_WIDTH = 32
 ) (
+    /* verilator lint_off UNUSED */
     input  logic [DATA_WIDTH-1:0]   Instr_i,
+    /* verilator lint_on UNUSED */
 
     output logic                    RegWrite_o,
     output logic [3:0]              ALUCtrl_o,      // Determined using func3 and the 5th bits of op and funct7

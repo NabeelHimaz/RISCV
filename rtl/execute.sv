@@ -15,10 +15,13 @@ module execute #(
     input logic [DATA_WIDTH-1:0]    ResultW_i,   //result from writeback
     input logic [DATA_WIDTH-1:0]    ALUResultM_i,
 
-    //control inputs  
+    //control inputs - Lint off unused
+    /* verilator lint_off UNUSED */
     input logic                     RegWriteE_i,
     input logic [1:0]               ResultSrcE_i,
     input logic                     MemWriteE_i,
+    /* verilator lint_on UNUSED */
+    
     input logic                     JumpE_i,
     input logic                     BranchE_i,
     input logic [3:0]               ALUCtrlE_i,
@@ -35,6 +38,7 @@ module execute #(
 
     output logic [DATA_WIDTH-1:0]   ALUResultE_o,
     output logic [DATA_WIDTH-1:0]   WriteDataE_o,
+    
     output logic [DATA_WIDTH-1:0]   PCPlus4E_o,
     output logic [4:0]              RdE_o,
     output logic                    branchTaken_o,
@@ -65,8 +69,6 @@ module execute #(
         endcase
     end
 
-    logic [DATA_WIDTH-1:0]  SrcBE;
-    //mux for srcBE based on hazard unit 
     always_comb begin
         case(ForwardBEctrl_i)
         2'b00: WriteDataE_o = RD2E_i;
@@ -77,8 +79,8 @@ module execute #(
     end
 
     logic [DATA_WIDTH-1:0] SrcB_ALU;
-    assign SrcB_ALU = (ALUSrcE_i) ? ImmExtE_i : WriteDataE_o; 
-
+    assign SrcB_ALU = (ALUSrcE_i) ? ImmExtE_i : WriteDataE_o;
+    
     ALU ALU(
         .srcA_i(SrcAE_Final), // Use Final SrcA
         .srcB_i(SrcB_ALU),
