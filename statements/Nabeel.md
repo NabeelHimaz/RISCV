@@ -1,6 +1,6 @@
 # Personal Statement 
 
-***Nabeel***
+***Nabeel Himaz***
 
 This document provides a comprehensive overview of my contributions to the RISC-V project. It outlines the completed work, the methodologies employed, the rationale behind key design decisions, the strategies used to address challenges, any mistakes encountered along the way and their subsequent resolution, as well as the insights and lessons learned from this experience.
 
@@ -9,7 +9,9 @@ This document provides a comprehensive overview of my contributions to the RISC-
 # Single Cycle RISCV-32I Design
 
 ## Control Unit
-[System Verilog](../rtl/decode/controlunit.sv) | [Testbench with test cases](../tb/our_tests/control_test_tb.cpp) | [Shell script for testing](../tb/bash/control_test.sh)
+
+[Final Single Cycle](https://github.com/NabeelHimaz/RISCV-Team04/commit/db4ceaa33e37d2cfb8aa8491e577e0a43cdd7b87#diff-5e6836689a2ca6d20398bc43f48d2653cb470c804cbf6583a124d0849fbfec37)
+[Final Pipelined](https://github.com/NabeelHimaz/RISCV-Team04/commit/02c150283d44854cc7f8556b9c299e3c776b3669#diff-5e6836689a2ca6d20398bc43f48d2653cb470c804cbf6583a124d0849fbfec37)
 
 ### Aims
 - Create a module that decodes the 32-bit instruction and produces the required control signals
@@ -175,7 +177,7 @@ end
 
 **Challenge 1: Memory Access Control**
 - **Problem**: Initially didn't have proper control for byte/halfword loads and stores
-- **Solution**: Added `MemType_o` and `MemSign_o` signals to handle all memory access variants
+- **Solution**: [Added](https://github.com/NabeelHimaz/RISCV-Team04/commit/1483adc80523dd0969f6c49a8fc2fc9b610ab149) `MemType_o` and `MemSign_o` signals to handle all memory access variants
 
 **Challenge 2: ALU Operation Encoding**
 - **Problem**: Distinguishing SUB from ADD and SRA from SRL using limited instruction bits
@@ -183,7 +185,7 @@ end
 
 **Challenge 3: Branch Logic Complexity**
 - **Problem**: Six different branch types need different comparison logic
-- **Solution**: Encoded branch type in 3-bit `Branch_o` signal, decoded by ALU/branch unit
+- **Solution**: [Encoded](https://github.com/NabeelHimaz/RISCV-Team04/commit/937ad817fb3b52619f86048f1fd08c74a2be1c08) branch type in 3-bit `Branch_o` signal, decoded by ALU/branch unit
 
 **Challenge 4: Result Multiplexer Control**
 - **Problem**: Different instructions write different data back to registers (ALU result, memory data, PC+4)
@@ -191,7 +193,7 @@ end
 
 **Challenge 5: Jump Instruction Differences**
 - **Problem**: JAL and JALR compute targets differently (PC+imm vs rs1+imm)
-- **Solution**: Added `JumpSrc_o` signal to select correct target calculation
+- **Solution**: [Added](https://github.com/NabeelHimaz/RISCV-Team04/commit/6d03ef2ef00d493b088af4921f1881419db0260b) `JumpSrc_o` signal to select correct target calculation
 
 ### Design Decisions and Rationale
 
@@ -227,16 +229,13 @@ I used GTKWave extensively for waveform analysis
 **Solution**: Added explicit parentheses in PC target calculation
 
 #### Bug 2: JAL Byte Addressing Issue
-**Problem**: JAL instruction jumping to addresses 4x too large, causing immediate crash or wrong function calls.
+**Problem**: Store intructions storing to the wrong address.
 
-**Key Discovery**: JAL immediate has implicit `0` at LSB (bit 0) for byte addressing
-- Instruction encodes bits [20:1] of offset
-- Bit [0] is always 0 (instructions are 4-byte aligned)
-- Must shift immediate left by 1 before using
+**Key Discovery**: The data memory would remove the LSB too make the address even.
 
-**Root Cause**: data_mem wasn't accounting for implicit left shift
+**Root Cause**: [data_mem](https://github.com/NabeelHimaz/RISCV-Team04/commit/db4ceaa33e37d2cfb8aa8491e577e0a43cdd7b87#diff-142eb3c98c4055506e7868461cc4c985ff95117aace93b11ea56307e168fdbcd) wasn't accounting for implicit left shift
 
-**Solution**: Updated sign extension for J-type immediates to include left shift
+**Solution**: Updated how data_mem_top handles the write addresses
 
 ### Debugging Tools and Techniques Developed
 
@@ -265,7 +264,7 @@ For each instruction execution, verified:
 # Pipelined RISCV-32I Design
 
 ## Hazard Unit Implementation
-[System Verilog](../rtl/hazard_unit.sv) | [Testbench with test cases](../tb/our_tests/hazard_unit_test_tb.cpp)
+[Final Hazard Unit](https://github.com/NabeelHimaz/RISCV-Team04/blob/complete/rtl/hazardunit.sv)
 
 ### Aims
 - Detect and resolve pipeline hazards to maintain correct program execution
@@ -278,18 +277,18 @@ For each instruction execution, verified:
 
 Pipeline execution introduces three types of hazards that can cause incorrect program behavior:
 
-**1. Data Hazards (RAW - Read After Write)**
+**1. Data Hazards **
 Occur when an instruction needs a value that a previous instruction hasn't written yet:
 ```assembly
-add x1, x2, x3   # Writes x1 in cycle 5 (writeback stage)
-sub x4, x1, x5   # Reads x1 in cycle 3 (execute stage) - too early
+add x1, x2, x3   #Writes x1 in cycle 5 (writeback stage)
+sub x4, x1, x5   #Reads x1 in cycle 3 (execute stage) - too early
 ```
 
 **2. Control Hazards**
 Occur when branch/jump decision isn't known until execute stage, but next instructions already fetched:
 ```assembly
-beq x1, x2, target   # Decision in cycle 3
-add x3, x4, x5       # Already fetched in cycle 2 - might be wrong the instruction
+beq x1, x2, target   #Decision in cycle 3
+add x3, x4, x5       #Already fetched in cycle 2 - might be wrong the instruction
 ```
 
 **3. Structural Hazards**
@@ -354,8 +353,8 @@ end
 
 **Example Scenario 1: Execute-to-Execute Forwarding**
 ```assembly
-add x1, x2, x3   # Cycle 1: Writes x1
-sub x4, x1, x5   # Cycle 2: Reads x1 (only 1 cycle apart!)
+add x1, x2, x3   #Cycle 1: Writes x1
+sub x4, x1, x5   #Cycle 2: Reads x1 
 ```
 - Cycle 3: ADD in memory stage, SUB in execute stage
 - SUB needs x1, ADD producing x1
@@ -364,9 +363,9 @@ sub x4, x1, x5   # Cycle 2: Reads x1 (only 1 cycle apart!)
 
 **Example Scenario 2: Memory-to-Execute Forwarding**
 ```assembly
-add x1, x2, x3   # Cycle 1
-nop              # Cycle 2
-sub x4, x1, x5   # Cycle 3
+add x1, x2, x3   #Cycle 1
+nop              #Cycle 2
+sub x4, x1, x5   #Cycle 3
 ```
 - Cycle 4: ADD in writeback stage, SUB in execute stage
 - Hazard unit: `ForwardA_E = 2'b01` (forward from writeback)
@@ -394,7 +393,7 @@ end
 **Load-Use Hazard Example**:
 ```assembly
 lw x1, 0(x2)     # Cycle 1: Load x1 (data available cycle 4)
-add x3, x1, x4   # Cycle 2: Needs x1 (in execute = cycle 3) - TOO EARLY!
+add x3, x1, x4   # Cycle 2: Needs x1 (in execute = cycle 3) 
 ```
 
 **Stall Behavior**:
@@ -448,8 +447,6 @@ target:
 
 **Performance Impact**: 2-cycle penalty for each taken branch/jump (two incorrectly fetched instructions flushed).
 
-### Complete Hazard Unit Module
-
 ### Design Decisions and Rationale
 
 **Decision 1: Two-Bit Forwarding Control**
@@ -486,9 +483,89 @@ Check `ResultSrc_E == 2'b01` instead of separate MemRead signal.
 
 ---
 
-## Pipeline Integration and Testing
+## Control Unit Modifications for Pipeline
 
-### Control Unit Modifications for Pipeline
+The control unit required several key modifications to support pipelined execution while maintaining compatibility with the hazard unit and branch resolution logic.
+
+### Key Changes from Single-Cycle to Pipelined Design
+
+**1. Operand Source Control (`Op1Src_o`)**
+
+[Added](https://github.com/NabeelHimaz/RISCV-Team04/commit/0e40776d2995287e734baff71ec0f4652db1e1bd) a new 2-bit control signal replacing the previous single-bit `ALUSrcA_o`:
+```systemverilog
+output logic [1:0] Op1Src_o,  //Selects SrcA (0=Reg, 1=PC, 2=Zero)
+```
+
+This enables three distinct sources:
+- `2'b00`: Register value (Rs1) - default for most instructions
+- `2'b01`: Program Counter (PC) - for AUIPC and JAL
+- `2'b10`: Zero - for LUI instruction
+
+**Rationale**: In the pipelined design, jump target calculation happens in the execute stage. This required explicit control to distinguish between JAL (PC + immediate) and JALR (Rs1 + immediate).
+
+**2. Branch Instruction Indicator (`BranchInstr_o`)**
+
+Added a dedicated signal to identify branch instructions:
+```systemverilog
+output logic BranchInstr_o
+
+BranchInstr_o = (op == 7'd99) ? 1'b1 : 1'b0;
+```
+
+**Purpose**: Helps the pipeline distinguish branch instructions from others, coordinating with the hazard unit for control hazard detection and branch decision generation in the execute stage.
+
+**3. Branch Decision Logic Moved to Execute Stage**
+
+**Single-cycle version (removed)**: [commit link](https://github.com/NabeelHimaz/RISCV-Team04/commit/7b087cf5cdbfe28561ece6fcd73fcfd794b1c0f6)
+```systemverilog
+PCSrc_o = (op == 7'd103 || op == 7'd111 || (op == 7'd99 && branchTaken_i)) ? 1'b1 : 1'b0;
+```
+
+**Pipelined version**: Control unit only generates `Branch_o` type encoding (3-bit signal identifying BEQ, BNE, BLT, etc.). The actual branch decision (`PCSrc`) is made in the execute stage after ALU comparison.
+
+**Rationale**: Branch decision cannot be made in decode stage because comparison flags aren't available yet. Control signals propagate through pipeline registers while branch decision is delayed until flags are ready.
+
+**4. Simplified Register Write Logic**
+
+Made `RegWrite_o` generation explicit and independent of branch decisions:
+```systemverilog
+RegWrite_o = (op == 7'd3 || op == 7'd19 || op == 7'd51 || 
+              op == 7'd23 || op == 7'd55 || op == 7'd111 || 
+              op == 7'd103) ? 1'b1 : 1'b0;
+```
+
+Explicitly lists all opcodes that write to registers for cleaner pipeline register propagation.
+
+**5. Default Value Assignment**
+
+Added defaults to prevent latches:
+```systemverilog
+always_comb begin 
+    ImmSrc_o  = 3'b000;
+    Branch_o  = 3'b010; 
+    ALUCtrl_o = 4'b0000;
+    MemType_o = 2'b00;
+    MemSign_o = 1'b0;
+    Op1Src_o  = 2'b00;
+    
+    case(op)
+        // instruction decoding
+    endcase
+end
+```
+
+Ensures pipeline bubbles (NOPs) have safe control signal values.
+
+### Control Signal Propagation
+
+Control signals propagate through pipeline stages:
+- **Decode to Execute**: `Branch_o`, `BranchInstr_o`, `Op1Src_o`, `ALUCtrl_o`, `ALUSrc_o`, `RegWrite_o`, `ResultSrc_o`, `MemWrite_o`, `MemType_o`, `MemSign_o`
+- **Execute to Memory**: `RegWrite_o`, `ResultSrc_o`, `MemWrite_o`, `MemType_o`, `MemSign_o`
+- **Memory to Writeback**: `RegWrite_o`, `ResultSrc_o`
+
+Pipeline registers maintain signal integrity while allowing each stage to operate independently with proper hazard handling.
+
+---
 
 # Learnings and Project Summary
 
