@@ -686,8 +686,14 @@ I modified top so that it would output a `cache_hit` signal, I traced this in wa
 
 This shows that cache is being hit meaning that theoretically it could be used in larger programs to speed up the CPU.   
 
-# Branch Prediction 
 
+# Branch Prediction
+
+I was able to do a little testing for the simple branch prediction we had implemented:
+
+![Branch-Prediction Testing](../images/Branch_Prediction_Test.png)
+
+Unfortunately, due to the limited time, we couldn't verify it further than the required tests. 
 
 # What I learned:
  
@@ -697,13 +703,6 @@ This shows that cache is being hit meaning that theoretically it could be used i
 
 - **Waveform debugging is essential**: GTKWave is useful to find bugs. Tracking signals through pipeline stages revealed bugs that would never show up in final outputs like PC+4 not propagating.
 
-# Branch Prediction
-
-I was able to do a little testing for the simple branch prediction we had implemented:
-
-![Branch-Prediction Testing](../images/Branch_Prediction_Testing.png)
-
-Unfortunately, due to the limited time, we couldn't verify it further than the required tests. 
 
 
 # Further Improvements:
