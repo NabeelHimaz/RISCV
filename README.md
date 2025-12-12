@@ -13,7 +13,7 @@
 # Quick Start
 This repository contains our complete implementation of a RISC-V RV32I processor with several major design iterations.
 
-We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We further enhanced the design with **Dynamic Branch Prediction** and the **M-Extension** (Hardware Multiplier).
+We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We further enhanced the design with **Dynamic Branch Prediction**.
 
 | Branch | Description |
 | ------ | ----------- |
@@ -21,7 +21,7 @@ We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way S
 |`Pipelined` | Pipelined + Full RV32I Implementation |
 |`Cache` | Cache + Full 32VI Single-Cycle Implementation |
 |`Complete` | Pipelined + Cache + Full RV32I Implementation |
-|`Mult-and-Branch-Predict` | Pipelined + Full RV32I + Branch Prediction + M-Ext Implementation |
+|`Branch-Predict` | Pipelined + Full RV32I + Branch Prediction Implementation |
 
 
 ### Prerequisites
@@ -239,7 +239,7 @@ The pipelined implementation supports the full RV32I instruction set, dividing t
 5. **Writeback (W)**: Writes results back to register file
 
 ## Schematic
-![RISC-V 32I Pipelined implementation](images/Pipelined.png)
+![RISC-V 32I Pipelined implementation](images/Pipelined_schematic.png)
 
 ## Contributions
 
@@ -263,7 +263,72 @@ The pipelined implementation supports the full RV32I instruction set, dividing t
 `X` - Lead Contributor   `C` - Contributor
 ## File Structure
 ```
-[NEED TO DO]
+RISCV-Team04/
+│
+├── rtl/
+│   ├── ALU.sv
+│   ├── controlunit.sv
+│   ├── data_mem.sv
+│   ├── data_mem_i.sv
+│   ├── data_mem_o.sv
+│   ├── data_mem_top.sv
+│   ├── decode.sv
+│   ├── execute.sv
+│   ├── extend.sv
+│   ├── fetch.sv
+│   ├── hazardunit.sv
+│   ├── instrmem.sv
+│   ├── memoryblock.sv
+│   ├── mux.sv
+│   ├── pc_module.sv
+│   ├── pipereg_DE_1.sv
+│   ├── pipereg_EM_1.sv
+│   ├── pipereg_FD_1.sv
+│   ├── pipereg_MW_1.sv
+│   ├── program.hex
+│   ├── regfile.sv
+│   ├── top.sv
+│   └── writeback.sv
+│
+├── tb/
+│   ├── asm/
+│   │   ├── 1_addi_bne.s
+│   │   ├── 2_li_add.s
+│   │   ├── 3_lbu_sb.s
+│   │   ├── 4_jal_ret.s
+│   │   ├── 5_pdf.s
+│   │   ├── 6_all_instructions.s
+│   │   ├── 7_control_hazards.s
+│   │   └── 8_hazards.s
+│   │
+│   ├── reference/
+│   │   ├── gaussian.mem
+│   │   └── pdf.asm
+│   │
+│   ├── our_tests/
+│   │   ├── ALU_tb.cpp
+│   │   ├── base_testbench.h
+│   │   ├── controlunit_tb.cpp
+│   │   ├── cpu_testbench.h
+│   │   ├── data_mem_1_tb.cpp
+│   │   ├── data_mem_0_tb.cpp
+│   │   ├── data_mem_tb.cpp
+│   │   ├── data_mem_top_tb.cpp
+│   │   └── verify.cpp
+│   │
+│   ├── assemble.sh
+│   ├── doit.sh
+│   ├── testall.sh
+│   └── .gitignore
+│
+├── statements/
+│   ├── Archit.md
+│   ├── Asad.md
+│   └── Nabeel.md
+│   └── Marcus.md
+│
+├── .gitignore
+└── README.md
 ```
 ## Implementation
 Transitioning from single-cycle to pipelined introduces various significant changes to the design structure. Combined with the full RV32I instruction set, there are many new modules and concepts in the pipelined version.
@@ -314,8 +379,7 @@ We also ran the same `pdf` and `f1_fsm` tests on Vbuddy, and observed the simila
 Cache memory in RISC-V employs direct-mapped, set-associative, or fully associative mapping to determine data placement, in this implementation we utilise 2-way set associative cache.
 **Tags** and **valid bits** identify cached data, while **replacement policies** like LRU handle evictions. Write policies such as **write-through** and **write-back** manage consistency between cache and memory.
 These techniques ensure efficient data access, reducing latency and leveraging locality principles for optimised performance.  
-## Schematic
-![](/images/cache-schematic.png)
+
 ## Contributions
 
 | Module / Task                | Asad | Marcus |
@@ -494,7 +558,7 @@ The implementation of the complete version remains structurally similar to the p
 
 ## Testing
 ### Test Cases 1-8
-Similar to pipelined, test cases 1-8 assess the full RV32I instruction set for the complete version. 
+Similar to pipelined, test cases 1-8 assess the full RV32I instruction set for the complete version. We added tests surrounding hazards and the control unit which were heavily affected by the pipelining changes. 
 
 ![alt text](images/complete-vers-testcase.png)
 
@@ -555,18 +619,6 @@ To mitigate the performance impact of control hazards in our pipelined architect
      - If we predicted Taken but shouldn't have: Redirect to `PC + 4`.
      - If we predicted Not Taken but should have: Redirect to the calculated Branch Target.
    - The BTB entry is updated with the new target and the counter is adjusted.
-
-# M-Extension (Hardware Multiplier)
-
-## Overview
-
-We extended the base RV32I instruction set to support the **M-Extension**, specifically the `MUL` instruction, enabling native integer multiplication.
-
-## Implementation
-
-- **Control Unit Update:** We modified the main decoder to recognize the M-extension opcode and distinguish it from standard R-type instructions using bit 25 (`funct7[0]`).
-- **ALU Modification:** We added a dedicated multiplication logic block within the ALU. When the new `MUL` control code (`4'b1010`) is received, the ALU performs a 32-bit multiplication of `srcA` and `srcB`.
-- **Pipeline Integration:** The multiplication operation fits within the existing Execute stage timing, requiring no structural changes to the pipeline stages or hazard unit.
 
 # Appendix
 ### A. Design Philosophy & Decisions

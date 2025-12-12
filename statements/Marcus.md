@@ -47,13 +47,6 @@ To overcome the significant control hazard penalties in the pipeline, I designed
     * **Fetch Stage:** The predictor provides a `PredictedTargetF` immediately. If a hit occurs in the BTB and the counter indicates "Taken", the PC is updated to the target in the *same cycle*, avoiding the flush penalty entirely.
     * **Execute Stage:** I modified `execute.sv` to verify the prediction. It compares the `ActualTaken` signal (calculated by the ALU) against the `PredictTakenE` signal (passed down the pipeline). If a mismatch occurs (Misprediction), the `PCSrcE` signal triggers a pipeline flush and redirects the PC to the correct path.
 
-### 6. M-Extension (Hardware Multiplier)
-I extended the core capabilities by implementing the RISC-V M-Extension, specifically the `MUL` instruction.
-* **ALU Modification:** Added a dedicated multiplication logic block within `ALU.sv` triggered by a new control code (`4'b1010`).
-* **Control Unit:** Updated the decoder to recognize the `funct7` bit distinguishing the M-extension from standard R-type instructions. This allows the processor to perform native integer multiplication without software emulation routines.
-
----
-
 ## Reflection & Design Decisions
 
 ### Design Decision: Byte-Addressable vs. Word-Addressable Memory
@@ -82,3 +75,4 @@ This project deepened my understanding of **hardware verification**. Debugging t
 If I had more time, I would:
 1.  **Unified Memory:** Modify `instrmem` to be writable, creating a Von Neumann architecture. This would allow self-modifying code but would require handling structural hazards (since Fetch and Memory stages would compete for the same resource).
 2.  **Advanced Cache Replacement:** Replace the current LRU-approximation policy with a Pseudo-LRU (PLRU) using tree-based bits, which scales better if we were to increase associativity to 4-way or 8-way.
+3.  **Implemented Multiplier** Correctly implement a multiplier.
