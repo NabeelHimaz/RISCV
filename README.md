@@ -227,6 +227,14 @@ https://github.com/user-attachments/assets/fc73e31b-ed6a-421a-bb6c-efd21d2088e7
 ## Overview
 The pipelined implementation supports the full RV32I instruction set, dividing the processor into five main stages: fetch, decode, execute, memory and writeback. The fundamental principle of pipelining is parallel instruction execution, where different stages of multiple instructions are processed simultaneously. This architecture achieves higher throughput by overlapping the execution of multiple instructions, though at the cost of increased complexity in hazard detection and resolution. Together, these improvements result in faster program execution compared to the single-cycle variant.
 
+**Pipeline Stages:**
+
+1. **Fetch (F)**: Retrieves instruction from memory
+2. **Decode (D)**: Decodes instruction and reads registers  
+3. **Execute (E)**: Performs ALU operations and computes addresses
+4. **Memory (M)**: Accesses data memory for loads/stores
+5. **Writeback (W)**: Writes results back to register file
+
 ## Schematic
 ![RISC-V 32I Pipelined implementation](images/Pipelined.png)
 
