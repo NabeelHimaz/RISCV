@@ -33,7 +33,7 @@ This document offers a detailed account of my work on the RISC-V project. It hig
     - Integrated cache module into single cycle
     - Modified top so that I could prove that cache was being hit
 
-### [Branch Prediction](#branch-prediction)
+### [Branch Prediction Testing](#branch-prediction)
 - Contributed to adding a quick branch prediction into the complete pipelined register
 - Ran basic tests
 ---
