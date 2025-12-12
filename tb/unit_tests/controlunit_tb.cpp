@@ -6,7 +6,6 @@ protected:
     void initializeInputs() override
     {
         top->Instr_i = 0;
-        // top->branchTaken_i = 0; // REMOVED: Not in Verilog
     }
 };
 
@@ -24,8 +23,8 @@ TEST_F(ControlUnitTestbench, ADDI_Negative_Immediate)
 
     //check other signals
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Renamed from ALUSrcB_o
-    EXPECT_EQ(top->Op1Src_o, 0);    // Renamed from ALUSrcA_o (0=Reg)
+    EXPECT_EQ(top->ALUSrc_o, 1);    // Updated from ALUSrcB_o
+    EXPECT_EQ(top->Op1Src_o, 0);    // Updated from ALUSrcA_o (0=Reg)
     EXPECT_EQ(top->ResultSrc_o, 0); 
     EXPECT_EQ(top->ImmSrc_o, 0);    
 }
@@ -38,8 +37,8 @@ TEST_F(ControlUnitTestbench, R_Type_ADD)
     tick();
 
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUSrc_o, 0);   // Renamed: 0 = Register operands
-    EXPECT_EQ(top->ALUCtrl_o, 0);  // add
+    EXPECT_EQ(top->ALUSrc_o, 0);    // Updated from ALUSrcB_o
+    EXPECT_EQ(top->ALUCtrl_o, 0);   // add
 }
 
 //r-type sub (funct3 = 000), checks if bit 30 triggers subtraction
@@ -60,24 +59,22 @@ TEST_F(ControlUnitTestbench, Branch_ALUSrc_Check)
     top->Instr_i = 0x00000063; //beq (funct3 = 000)
     tick();
 
-    //alusrc should be 0 for branches (compare RegA vs RegB)
+    //alusrcb should be 0 for branches
     EXPECT_EQ(top->ALUSrc_o, 0); 
 }
 
-// Check BEQ Signals (Logic for taken/not-taken is external to this module)
+//check BEQ decode logic (PCSrc calculation moved to Execute stage in new design)
 TEST_F(ControlUnitTestbench, Instruction_BEQ)
 {
     top->Instr_i = 0x00000063; //beq (funct3 = 000)
     
     tick();
-
-    // Instead of checking PCSrc (which is external), we check if it flagged a branch
-    EXPECT_EQ(top->BranchInstr_o, 1); // It IS a branch instruction
-    EXPECT_EQ(top->Branch_o, 0b000);  // BEQ type
     
+    // Just verify it decodes as a branch
+    EXPECT_EQ(top->BranchInstr_o, 1); 
+    EXPECT_EQ(top->Branch_o, 0b000);   // BEQ
     EXPECT_EQ(top->RegWrite_o, 0); 
-    EXPECT_EQ(top->ImmSrc_o, 2);   // b-type
-    EXPECT_EQ(top->ALUSrc_o, 0);   // Compare registers
+    EXPECT_EQ(top->ImmSrc_o, 2);       // b-type
 }
 
 //check if branch_o outputs correct encoding from funct3
@@ -108,8 +105,8 @@ TEST_F(ControlUnitTestbench, Instruction_LW)
     EXPECT_EQ(top->ResultSrc_o, 1); //from memory
     EXPECT_EQ(top->ImmSrc_o, 0);    //i-type
     
-    EXPECT_EQ(top->Op1Src_o, 0);    // Renamed from ALUSrcA_o (reg)
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Renamed from ALUSrcB_o (imm)
+    EXPECT_EQ(top->Op1Src_o, 0);    // Updated from ALUSrcA_o (reg)
+    EXPECT_EQ(top->ALUSrc_o, 1);    // Updated from ALUSrcB_o (imm)
     EXPECT_EQ(top->MemType_o, 0);   //word width (for funct3 = 010)
 }
 
@@ -145,11 +142,12 @@ TEST_F(ControlUnitTestbench, Instruction_JAL)
     top->Instr_i = 0x0000006F; 
     tick();
 
+    // Updated: PCSrc logic is external now, checking other signals
     EXPECT_EQ(top->ResultSrc_o, 2); 
     EXPECT_EQ(top->RegWrite_o, 1);  //save pc+4
     EXPECT_EQ(top->ImmSrc_o, 4);    //j-type
     EXPECT_EQ(top->JumpSrc_o, 0);   //0 for jal
-    EXPECT_EQ(top->Op1Src_o, 1);    // PC is source
+    EXPECT_EQ(top->Op1Src_o, 1);    // PC
 }
 
 //jalr test (opcode 103, funct3 = 000)
@@ -174,9 +172,7 @@ TEST_F(ControlUnitTestbench, Instruction_LUI)
     EXPECT_EQ(top->RegWrite_o, 1);
     EXPECT_EQ(top->ImmSrc_o, 3);    //u-type
     EXPECT_EQ(top->ALUSrc_o, 1);
-    
-    // LUI sets Op1Src to 2
-    EXPECT_EQ(top->Op1Src_o, 2);   
+    EXPECT_EQ(top->Op1Src_o, 2);
 }
 
 //auipc test (opcode 23)
@@ -187,9 +183,7 @@ TEST_F(ControlUnitTestbench, Instruction_AUIPC)
 
     EXPECT_EQ(top->RegWrite_o, 1);
     EXPECT_EQ(top->ImmSrc_o, 3);    
-    
-    // AUIPC sets Op1Src to 1
-    EXPECT_EQ(top->Op1Src_o, 1);   
+    EXPECT_EQ(top->Op1Src_o, 1);
 }
 
 int main(int argc, char **argv)
