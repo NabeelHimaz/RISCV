@@ -9,199 +9,215 @@ protected:
         top->write_en_i = 0;
         top->addr_i = 0;
         top->write_data_i = 0;
-        top->mem_type_i = 0; // Default to Word
-        top->mem_sign_i = 0; // Default to Signed
+        top->mem_type_i = 0; // default to word
+        top->mem_sign_i = 0; // default to signed
     }
 
     void stepClock()
     {
-        // Rising edge
+        // rising edge
         top->clk_i = 1;
         tick(); 
         
-        // Falling edge (write trigger in underlying mem)
+        // falling edge - this is usually when the write happens in memory
         top->clk_i = 0;
         tick(); 
     }
 };
 
-// ==========================================
-// 1. WORD ACCESS TESTS (mem_type = 00)
-// ==========================================
-
+//basic word read/write test
+//write a full 32-bit value and make sure we get it back
 TEST_F(DataMemTopTestbench, WordReadWrite)
 {
-    // Write 0xDEADBEEF to address 0x100
+    //write 0xdeadbeef to address 0x100
     top->write_en_i = 1;
-    top->mem_type_i = 0b00; // Word
+    top->mem_type_i = 0; // word
     top->addr_i = 0x100;
     top->write_data_i = 0xDEADBEEF;
     stepClock();
 
-    // Read back
+    //turn off write and read it back
     top->write_en_i = 0;
-    tick(); // Propagate logic
+    tick(); 
 
     EXPECT_EQ(top->read_data_o, 0xDEADBEEF);
 }
 
-// ==========================================
-// 2. BYTE ACCESS TESTS (mem_type = 01)
-// ==========================================
-
-// Test storing bytes at different offsets within a word
-// Logic Byte 0: [7:0], 1: [15:8], 2: [23:16], 3: [31:24]
+//byte access test with offsets
+//we write 4 individual bytes to fill up a word, then read them back
+//this tests if your data_mem_i correctly shifts inputs based on address bits [1:0]
 TEST_F(DataMemTopTestbench, StoreLoadByte_Offsets)
 {
     uint32_t base_addr = 0x200;
 
-    // --- WRITE PHASE ---
     top->write_en_i = 1;
-    top->mem_type_i = 0b01; // Byte
+    top->mem_type_i = 1; // byte
     
-    // Write 0x11 at Offset 0
+    //write 0x11 at offset 0
     top->addr_i = base_addr + 0;
     top->write_data_i = 0x11; 
     stepClock();
 
-    // Write 0x22 at Offset 1
+    //write 0x22 at offset 1
     top->addr_i = base_addr + 1;
     top->write_data_i = 0x22; 
     stepClock();
 
-    // Write 0x33 at Offset 2
+    //write 0x33 at offset 2
     top->addr_i = base_addr + 2;
     top->write_data_i = 0x33; 
     stepClock();
 
-    // Write 0x44 at Offset 3
+    //write 0x44 at offset 3
     top->addr_i = base_addr + 3;
     top->write_data_i = 0x44; 
     stepClock();
 
-    // --- READ PHASE (Byte Level) ---
+    //read phase
     top->write_en_i = 0;
-    top->mem_sign_i = 1; // Unsigned read (LBU) to avoid sign extension confusion here
+    top->mem_sign_i = 1; // unsigned read (lbu) just to see the raw byte
 
-    // Check Offset 0
+    //check offset 0
     top->addr_i = base_addr + 0;
     tick();
     EXPECT_EQ(top->read_data_o, 0x11);
 
-    // Check Offset 1
+    //check offset 1
     top->addr_i = base_addr + 1;
     tick();
     EXPECT_EQ(top->read_data_o, 0x22);
 
-    // Check Offset 2
+    //check offset 2
     top->addr_i = base_addr + 2;
     tick();
     EXPECT_EQ(top->read_data_o, 0x33);
 
-    // Check Offset 3
+    //check offset 3
     top->addr_i = base_addr + 3;
     tick();
     EXPECT_EQ(top->read_data_o, 0x44);
 
-    // --- VERIFY FULL WORD ---
-    // Reading as a Word (00) should show the composite value
-    // Assuming Little Endian logic in underlying mem structure
-    top->mem_type_i = 0b00; 
+    //verify the full word looks like 0x44332211 (little endian)
+    top->mem_type_i = 0; // word
     top->addr_i = base_addr;
     tick();
     EXPECT_EQ(top->read_data_o, 0x44332211); 
 }
 
-// Test Sign Extension for Bytes (LB vs LBU)
+//check if sign extension works for bytes
+//store 0xff (which is -1 in 8-bit signed)
 TEST_F(DataMemTopTestbench, LoadByte_SignExtension)
 {
-    // Write 0xFF (negative in 8-bit) to address
     top->write_en_i = 1;
-    top->mem_type_i = 0b01; // Byte
+    top->mem_type_i = 1; // byte
     top->addr_i = 0x300;
     top->write_data_i = 0xFF; 
     stepClock();
 
     top->write_en_i = 0;
 
-    // 1. Test Signed Load (LB) -> mem_sign_i = 0
-    // Expect 0xFFFFFFFF (-1)
+    //1. test signed load (lb). mem_sign_i = 0
+    //should extend to 0xffffffff
     top->mem_sign_i = 0; 
     tick();
     EXPECT_EQ(top->read_data_o, 0xFFFFFFFF);
 
-    // 2. Test Unsigned Load (LBU) -> mem_sign_i = 1
-    // Expect 0x000000FF (255)
+    //2. test unsigned load (lbu). mem_sign_i = 1
+    //should be just 0x000000ff
     top->mem_sign_i = 1; 
     tick();
     EXPECT_EQ(top->read_data_o, 0x000000FF);
 }
 
-// ==========================================
-// 3. HALF-WORD ACCESS TESTS (mem_type = 10)
-// ==========================================
-
+//half-word access test
+//similar to byte test, but writing 16 bits at a time
 TEST_F(DataMemTopTestbench, StoreLoadHalf_Offsets)
 {
     uint32_t base_addr = 0x400;
 
-    // --- WRITE PHASE ---
     top->write_en_i = 1;
-    top->mem_type_i = 0b10; // Half
+    top->mem_type_i = 2; // half
     
-    // Write 0xAAAA at Offset 0 (covers bytes 0 and 1)
+    //write 0xaaaa at offset 0 (bytes 0,1)
     top->addr_i = base_addr;
     top->write_data_i = 0xAAAA;
     stepClock();
 
-    // Write 0xBBBB at Offset 2 (covers bytes 2 and 3)
+    //write 0xbbbb at offset 2 (bytes 2,3)
     top->addr_i = base_addr + 2;
     top->write_data_i = 0xBBBB;
     stepClock();
 
-    // --- READ PHASE (Half Level) ---
+    //read phase
     top->write_en_i = 0;
-    top->mem_sign_i = 1; // Unsigned (LHU)
+    top->mem_sign_i = 1; // unsigned (lhu)
 
-    // Check Offset 0
+    //check lower half
     top->addr_i = base_addr;
     tick();
     EXPECT_EQ(top->read_data_o, 0xAAAA);
 
-    // Check Offset 2
+    //check upper half
     top->addr_i = base_addr + 2;
     tick();
     EXPECT_EQ(top->read_data_o, 0xBBBB);
 
-    // --- VERIFY FULL WORD ---
-    top->mem_type_i = 0b00;
+    //verify full word is bbbbaaaa
+    top->mem_type_i = 0;
     top->addr_i = base_addr;
     tick();
     EXPECT_EQ(top->read_data_o, 0xBBBBAAAA); 
 }
 
+//half-word sign extension test
+//store 0xf00d (negative in 16-bit)
 TEST_F(DataMemTopTestbench, LoadHalf_SignExtension)
 {
-    // Write 0xF00D (negative in 16-bit)
     top->write_en_i = 1;
-    top->mem_type_i = 0b10; // Half
+    top->mem_type_i = 2; // half
     top->addr_i = 0x500;
     top->write_data_i = 0xF00D;
     stepClock();
 
     top->write_en_i = 0;
 
-    // 1. Test Signed Load (LH) -> mem_sign_i = 0
-    // Expect 0xFFFFF00D
+    //1. test signed load (lh). should be 0xfffff00d
     top->mem_sign_i = 0;
     tick();
     EXPECT_EQ(top->read_data_o, 0xFFFFF00D);
 
-    // 2. Test Unsigned Load (LHU) -> mem_sign_i = 1
-    // Expect 0x0000F00D
+    //2. test unsigned load (lhu). should be 0x0000f00d
     top->mem_sign_i = 1;
     tick();
     EXPECT_EQ(top->read_data_o, 0x0000F00D);
+}
+
+//integrity check
+//making sure writing a single byte doesn't wipe out the rest of the word
+TEST_F(DataMemTopTestbench, ReadModifyWrite_Integrity)
+{
+    uint32_t addr = 0x600;
+
+    //1. fill word with all Fs
+    top->write_en_i = 1;
+    top->mem_type_i = 0; // word
+    top->addr_i = addr;
+    top->write_data_i = 0xFFFFFFFF;
+    stepClock();
+
+    //2. overwrite just byte 1 (offset 1) with 0x00
+    top->mem_type_i = 1; // byte
+    top->addr_i = addr + 1;
+    top->write_data_i = 0x00;
+    stepClock();
+
+    //3. read back. expected: 0xff00ffff
+    top->write_en_i = 0;
+    top->mem_type_i = 0; // word
+    top->addr_i = addr;
+    tick();
+
+    EXPECT_EQ(top->read_data_o, 0xFFFF00FF);
 }
 
 int main(int argc, char **argv)

@@ -7,7 +7,7 @@
 #include "verilated_vcd_c.h"
 #include "gtest/gtest.h"
 
-#define MAX_SIM_CYCLES 1000000
+#define MAX_SIM_CYCLES 10000
 
 class CpuTestbench : public ::testing::Test
 {
@@ -17,7 +17,6 @@ public:
         // Create new context for simulation
         context_ = new VerilatedContext;
         ticks_ = 0;
-        last_trigger_ = 0;
     }
 
     void setupTest(const std::string &name)
@@ -62,12 +61,10 @@ public:
             }
             ticks_++;
 
-             if (top_->trigger && !last_trigger_) {
-        std::cout << name_ << " completed in " << ticks_ 
-                  << " cycles" << std::endl;
-        return;  // Stop immediately
-    }
-        last_trigger_ = top_->trigger;
+            if (Verilated::gotFinish())
+            {
+                exit(0);
+            }
         }
     }
 
@@ -99,5 +96,4 @@ protected:
     VerilatedVcdC* tfp_;
     std::string name_;
     unsigned int ticks_;
-    uint8_t last_trigger_;
 };
