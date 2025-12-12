@@ -50,12 +50,12 @@ TEST_F(CpuTestbench, TestPdf)
     EXPECT_EQ(top_->a0, 15363);
 }
 
-TEST_F(CpuTestbench, TestHazard)
+TEST_F(CpuTestbench, TestAllInstructions)
 {
-    setupTest("8_hazard");
+    setupTest("6_all_instructions");
     initSimulation();
     runSimulation(CYCLES);
-    EXPECT_EQ(top_->a0, 100);
+    EXPECT_EQ(top_->a0, 1024);
 }
 
 TEST_F(CpuTestbench, TestControlHazard)
@@ -66,13 +66,15 @@ TEST_F(CpuTestbench, TestControlHazard)
     EXPECT_EQ(top_->a0, 0);
 }
 
-TEST_F(CpuTestbench, TestAllInstructions)
+
+TEST_F(CpuTestbench, TestHazard)
 {
-    setupTest("6_all_instructions");
+    setupTest("8_hazard");
     initSimulation();
     runSimulation(CYCLES);
-    EXPECT_EQ(top_->a0, 1024);
+    EXPECT_EQ(top_->a0, 100);
 }
+
 
 int main(int argc, char **argv)
 {
