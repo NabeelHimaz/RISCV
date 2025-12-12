@@ -98,7 +98,7 @@ public:
                 //plot a0 (0-255)
                 vbdPlot(int(top_->a0), 0, 255);
                 vbdCycle(i);
-                std::cout << int(top_->a0) << std::endl;
+                //std::cout << int(top_->a0) << std::endl;
             }
 
             //check for exit
