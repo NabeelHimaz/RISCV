@@ -13,9 +13,7 @@
 # Quick Start
 This repository contains our complete implementation of a RISC-V RV32I processor with several major design iterations.
 
-We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We started with the Stretch goal 3 first by doing the full implementation of the RV32I instruction set, and then naturally progressed into doing pipelining complete with hazard detection. 
-
- 
+We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We further enhanced the design with **Dynamic Branch Prediction** and the **M-Extension** (Hardware Multiplier).
 
 | Branch | Description |
 | ------ | ----------- |
@@ -23,6 +21,7 @@ We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way S
 |`Pipelined` | Pipelined + Full RV32I Implementation |
 |`Cache` | Cache + Full 32VI Single-Cycle Implementation |
 |`Complete` | Pipelined + Cache + Full RV32I Implementation |
+|`Mult-and-Branch-Predict` | Pipelined + Full RV32I + Branch Prediction + M-Ext Implementation |
 
 
 ### Prerequisites
@@ -523,6 +522,40 @@ Key components for dual-issue execution:
 - **Register File** - Four read ports (two per instruction) and two write ports
 - **Instruction Fetch** - Fetches two instructions per cycle
 - **Result Writeback** - Simultaneous writes to different destination registers
+
+# Dynamic Branch Prediction
+
+## Overview
+
+To mitigate the performance impact of control hazards in our pipelined architecture, we implemented a **Dynamic Branch Predictor** using a Branch Target Buffer (BTB).
+
+## Architecture
+
+- **Branch Target Buffer (BTB):** A direct-mapped cache (64 entries) that stores the target address for branch instructions. It is indexed by the lower bits of the PC.
+- **Saturating Counters:** Each BTB entry maintains a 2-bit state machine (Strongly Not Taken, Weakly Not Taken, Weakly Taken, Strongly Taken) to predict the branch outcome based on local history.
+
+## Operation
+
+1. **Fetch Stage Prediction:** The Fetch unit queries the BTB using the current PC. If a valid entry exists and the counter predicts "Taken," the PC is immediately updated to the target address, avoiding a pipeline bubble.
+2. **Execute Stage Verification:** The Execute unit resolves the actual branch outcome. It compares this against the prediction passed down the pipeline (`PredictTakenE`).
+3. **Misprediction Recovery:** If the prediction was incorrect:
+   - The pipeline is flushed (FlushD, FlushE).
+   - The PC is corrected:
+     - If we predicted Taken but shouldn't have: Redirect to `PC + 4`.
+     - If we predicted Not Taken but should have: Redirect to the calculated Branch Target.
+   - The BTB entry is updated with the new target and the counter is adjusted.
+
+# M-Extension (Hardware Multiplier)
+
+## Overview
+
+We extended the base RV32I instruction set to support the **M-Extension**, specifically the `MUL` instruction, enabling native integer multiplication.
+
+## Implementation
+
+- **Control Unit Update:** We modified the main decoder to recognize the M-extension opcode and distinguish it from standard R-type instructions using bit 25 (`funct7[0]`).
+- **ALU Modification:** We added a dedicated multiplication logic block within the ALU. When the new `MUL` control code (`4'b1010`) is received, the ALU performs a 32-bit multiplication of `srcA` and `srcB`.
+- **Pipeline Integration:** The multiplication operation fits within the existing Execute stage timing, requiring no structural changes to the pipeline stages or hazard unit.
 
 # Appendix
 ### A. Design Philosophy & Decisions

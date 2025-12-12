@@ -2,7 +2,7 @@
 
 ## Summary of Contributions
 
-As the Memory Subsystem Lead, my primary responsibility was designing and implementing the robust data and instruction memory architectures required for the RISC-V processor. I also led the development of the Pipeline Registers to enable the transition from Single-Cycle to Pipelined execution and integrated the Data Cache for the final optimized build.
+As the Memory Subsystem Lead and Microarchitecture Engineer, my primary responsibility was designing and implementing the robust data and instruction memory architectures required for the RISC-V processor. I also led the development of the Pipeline Registers, the Data Cache, and advanced performance features including Dynamic Branch Prediction and the M-Extension (Hardware Multiplier).
 
 | Module Group | Specific Modules | Role |
 | :--- | :--- | :--- |
@@ -10,6 +10,8 @@ As the Memory Subsystem Lead, my primary responsibility was designing and implem
 | **Instruction Memory** | `instrmem.sv` | **Lead** |
 | **Pipeline Registers** | `pipereg_FD_1.sv`, `pipereg_DE_1.sv`, `pipereg_EM_1.sv`, `pipereg_MW_1.sv` | **Lead** |
 | **Cache** | `data_cache.sv` | **Lead** |
+| **Branch Prediction** | `branch_predictor.sv`, `fetch.sv` (Mod), `execute.sv` (Mod) | **Lead** |
+| **M-Extension** | `ALU.sv` (Mod), `controlunit.sv` (Mod) | **Lead** |
 | **Integration** | `top.sv` (Pipelined & Complete versions) | **Co-Dev** |
 
 ---
@@ -22,10 +24,10 @@ The RISC-V ISA requires support for byte (`LB`, `SB`), half-word (`LH`, `SH`), a
 * **Input Alignment (`data_mem_i.sv`):** This module handles the `STORE` logic. It takes the 32-bit `write_data_i` and shifts it into the correct byte lanes based on the address's two least significant bits (`byte_offset`).
     * *Example:* For a Store Byte (`SB`) at address offset `01`, the data is shifted to bits `[15:8]`. This ensures that when we write to the 32-bit wide memory row, the byte lands in the correct physical location without corrupting neighbors.
 * **Physical Storage (`data_mem.sv`):** I implemented the core memory as a byte-addressable array `logic [7:0] ram_array`. This was a crucial design choice over a word-addressable array, as it simplified the logic for unaligned or sub-word accesses. Writes are synchronized to the negative clock edge to ensure stability during the Execute stage.
-* **Output Extension (`data_mem_o.sv`):** This module handles `LOAD` logic.It reads the raw data from memory and performs the necessary **Sign Extension** (for `LB`, `LH`) or **Zero Extension** (for `LBU`, `LHU`) based on the `MemSign` control signal.
+* **Output Extension (`data_mem_o.sv`):** This module handles `LOAD` logic. It reads the raw data from memory and performs the necessary **Sign Extension** (for `LB`, `LH`) or **Zero Extension** (for `LBU`, `LHU`) based on the `MemSign` control signal.
 
 ### 2. Instruction Memory (`instrmem.sv`)
-I designed the Instruction Memory as a Read-Only Memory (ROM) initialized from a hex file (`program.hex`) using `$readmemh`.I ensured the addressing logic correctly mapped the PC (Program Counter) to the physical array, supporting the processor's reset vector at `0xBFC00000` by applying a constant offset subtraction.
+I designed the Instruction Memory as a Read-Only Memory (ROM) initialized from a hex file (`program.hex`) using `$readmemh`. I ensured the addressing logic correctly mapped the PC (Program Counter) to the physical array, supporting the processor's reset vector at `0xBFC00000` by applying a constant offset subtraction.
 
 ### 3. Pipeline Registers
 To facilitate the transition to the Pipelined architecture, I implemented the pipeline registers that enforce the temporal separation of instruction stages.
@@ -37,6 +39,19 @@ For the final "Complete" extension, I implemented a data cache to reduce memory 
 * **Structure:** I chose a 2-way set associative design to balance complexity and hit rate. The cache uses `Tag`, `Valid`, and `Dirty` bits for each line.
 * **Stall Logic:** A critical part of this implementation was the `stall` signal generation. Upon a cache miss, I implemented logic to freeze the entire CPU pipeline while the cache controller fetches the required block from main memory.
 
+### 5. Dynamic Branch Prediction
+To overcome the significant control hazard penalties in the pipeline, I designed and integrated a **Dynamic Branch Predictor** using a Branch Target Buffer (BTB).
+* **Branch Target Buffer (BTB):** Implemented a direct-mapped table with 64 entries. Each entry stores a `tag` (PC) and a `target` address.
+* **2-Bit Saturating Counter:** I implemented a localized history table using a 2-bit state machine (Strongly Not Taken, Weakly Not Taken, Weakly Taken, Strongly Taken). This ensures that a single anomalous branch outcome does not immediately flip the prediction strategy.
+* **Pipeline Integration:**
+    * **Fetch Stage:** The predictor provides a `PredictedTargetF` immediately. If a hit occurs in the BTB and the counter indicates "Taken", the PC is updated to the target in the *same cycle*, avoiding the flush penalty entirely.
+    * **Execute Stage:** I modified `execute.sv` to verify the prediction. It compares the `ActualTaken` signal (calculated by the ALU) against the `PredictTakenE` signal (passed down the pipeline). If a mismatch occurs (Misprediction), the `PCSrcE` signal triggers a pipeline flush and redirects the PC to the correct path.
+
+### 6. M-Extension (Hardware Multiplier)
+I extended the core capabilities by implementing the RISC-V M-Extension, specifically the `MUL` instruction.
+* **ALU Modification:** Added a dedicated multiplication logic block within `ALU.sv` triggered by a new control code (`4'b1010`).
+* **Control Unit:** Updated the decoder to recognize the `funct7` bit distinguishing the M-extension from standard R-type instructions. This allows the processor to perform native integer multiplication without software emulation routines.
+
 ---
 
 ## Reflection & Design Decisions
@@ -47,9 +62,10 @@ I explicitly chose to declare the RAM array as `logic [7:0] ram_array[...]` rath
 
 ### Mistakes & Challenges
 
-* **Challenge: Byte Addressing Offset:** During the initial implementation of `instrmem`, instructions were being fetched incorrectly.
-    * *Issue:* I initially accessed the memory using `addr` directly. However, since the PC increments by 4 and my memory was byte-addressed, I needed to fetch 4 bytes at `addr`, `addr+1`, `addr+2`, and `addr+3` and concatenate them to form the full 32-bit instruction.
-    * *Resolution:* I corrected the combinational read logic to `{rom_mem[addr+3], rom_mem[addr+2], ...}` ensuring correct Little-Endian reconstruction.
+* **Challenge: Branch Misprediction Recovery:**
+    * *Issue:* Integrating the branch predictor caused infinite loops when a misprediction occurred on a `JAL` instruction.
+    * *Root Cause:* The recovery logic initially defaulted to `PC+4` for *all* mispredictions. However, if we predicted "Not Taken" for a Jump, but the Jump *was* Taken (as they always are), we need to correct to the Jump Target, not `PC+4`.
+    * *Resolution:* I rewrote the `PCTargetE` logic in `execute.sv` to multiplex the recovery address based on `ActualTaken` status: if we missed a Taken branch, go to Target; if we wrongly took a Not-Taken branch, go to `PC+4`.
 
 * **Mistake: Pipeline Synchronization of PC:**
     * *Issue:* In the early Pipelined version, `JAL` instructions were jumping to incorrect targets.
