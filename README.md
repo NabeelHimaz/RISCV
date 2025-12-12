@@ -8,12 +8,13 @@
 - [Cached Implementation](#data-memory-cache)
 - [Complete RISC-V](#complete-riscv-cpu)
 - [Superscalar](#superscalar)
+- [Dynamic Branch Prediction](#dynamic-branch-prediction)
 - [Appendix](#appendix)
 
 # Quick Start
 This repository contains our complete implementation of a RISC-V RV32I processor with several major design iterations.
 
-We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We further enhanced the design with **Dynamic Branch Prediction**.
+We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way Set Associative Write-Back Cache, Full RV32I Design). We further enhanced the design with the **Superscalar** and **Dynamic Branch Prediction**.
 
 | Branch | Description |
 | ------ | ----------- |
@@ -21,6 +22,7 @@ We completed the Single-Cycle and all of the stretch goals (Pipelined, Two-Way S
 |`Pipelined` | Pipelined + Full RV32I Implementation |
 |`Cache` | Cache + Full 32VI Single-Cycle Implementation |
 |`Complete` | Pipelined + Cache + Full RV32I Implementation |
+|`Superscalar` | Superscalar Implementation |
 |`Branch-Predict` | Pipelined + Full RV32I + Branch Prediction Implementation |
 
 
