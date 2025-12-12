@@ -20,7 +20,7 @@ As the Memory Subsystem Lead and Microarchitecture Engineer, my primary responsi
 
 ### 1. Modular Data Memory Subsystem
 The RISC-V ISA requires support for byte (`LB`, `SB`), half-word (`LH`, `SH`), and word (`LW`, `SW`) access. Implementing this in a single module would have resulted in complex, hard-to-debug code. I formulated a **modular design strategy**, splitting the memory into three distinct stages wrapped in `data_mem_top.sv`:
-
+![commit](https://github.com/NabeelHimaz/RISCV-Team04/commit/4dfc7ff2fad6d24896700dc5a0887b9f4b7010fb)
 * **Input Alignment (`data_mem_i.sv`):** This module handles the `STORE` logic. It takes the 32-bit `write_data_i` and shifts it into the correct byte lanes based on the address's two least significant bits (`byte_offset`).
     * *Example:* For a Store Byte (`SB`) at address offset `01`, the data is shifted to bits `[15:8]`. This ensures that when we write to the 32-bit wide memory row, the byte lands in the correct physical location without corrupting neighbors.
 * **Physical Storage (`data_mem.sv`):** I implemented the core memory as a byte-addressable array `logic [7:0] ram_array`. This was a crucial design choice over a word-addressable array, as it simplified the logic for unaligned or sub-word accesses. Writes are synchronized to the negative clock edge to ensure stability during the Execute stage.
@@ -30,16 +30,19 @@ The RISC-V ISA requires support for byte (`LB`, `SB`), half-word (`LH`, `SH`), a
 I designed the Instruction Memory as a Read-Only Memory (ROM) initialized from a hex file (`program.hex`) using `$readmemh`. I ensured the addressing logic correctly mapped the PC (Program Counter) to the physical array, supporting the processor's reset vector at `0xBFC00000` by applying a constant offset subtraction.
 
 ### 3. Pipeline Registers
+![commit](https://github.com/NabeelHimaz/RISCV-Team04/commit/a1e7e156661d5d50a550c7c8f86e4fa82e14fc6b)
 To facilitate the transition to the Pipelined architecture, I implemented the pipeline registers that enforce the temporal separation of instruction stages.
 * **Signal Propagation:** I carefully mapped every control signal (e.g., `RegWrite`, `MemWrite`, `ALUCtrl`) and data signal (e.g., `PC`, `ALUResult`, `Rd`) required in downstream stages.
 * **Hazard Support:** I added synchronous `flush` and `stall` inputs to these registers. This allows the Hazard Unit to inject "bubbles" (NOPs) or freeze the pipeline state when data or control hazards are detected.
 
 ### 4. Two-Way Set Associative Cache
+![commit](https://github.com/NabeelHimaz/RISCV-Team04/commit/5f926b932b9e0dd42c392c0db94a61be9bfe8a49)
 For the final "Complete" extension, I implemented a data cache to reduce memory access latency.
 * **Structure:** I chose a 2-way set associative design to balance complexity and hit rate. The cache uses `Tag`, `Valid`, and `Dirty` bits for each line.
 * **Stall Logic:** A critical part of this implementation was the `stall` signal generation. Upon a cache miss, I implemented logic to freeze the entire CPU pipeline while the cache controller fetches the required block from main memory.
 
 ### 5. Dynamic Branch Prediction
+![commit](https://github.com/NabeelHimaz/RISCV-Team04/commit/d907d778e14145225431a3fe7f89afcd735a198c)
 To overcome the significant control hazard penalties in the pipeline, I designed and integrated a **Dynamic Branch Predictor** using a Branch Target Buffer (BTB).
 * **Branch Target Buffer (BTB):** Implemented a direct-mapped table with 64 entries. Each entry stores a `tag` (PC) and a `target` address.
 * **2-Bit Saturating Counter:** I implemented a localized history table using a 2-bit state machine (Strongly Not Taken, Weakly Not Taken, Weakly Taken, Strongly Taken). This ensures that a single anomalous branch outcome does not immediately flip the prediction strategy.
