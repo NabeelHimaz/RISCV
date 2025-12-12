@@ -6,209 +6,191 @@ protected:
     void initializeInputs() override
     {
         top->Instr_i = 0;
-        top->Zero_i = 0;
-        // Outputs: RegWrite_o, ALUCtrl_o, ALUSrc_o, ImmSrc_o, 
-        //          PCSrc_o, MemWrite_o, ResultSrc_o
+        top->branchTaken_i = 0;
     }
 };
 
-//NH: to fix
-//verify that ADDI performs an ADD (0000) even if bit 30 (funct7) is set.
-//issue: bit 30 turns ADDI into SUB because it shares logic with R-Type.
-//instruction: addi x1, x2, -1 (Negative immediate sets bit 30 to 1)
-//Opcode: 0010011 (19), Funct3: 000, Bit 30: 1
+//verify addi works with negative immediates
+//funct3 is 000. bit 30 is set (like in sub) but it should still be an add
 TEST_F(ControlUnitTestbench, ADDI_Negative_Immediate)
 {
-    //0x40000013 -> Bit 30 is High, Op is 19 (ADDI)
-    top->Instr_i = 0x40000013; 
-    top->Zero_i = 0;
+    //addi x1, x2, -1 (0xFFF10093). bit 30 is high
+    top->Instr_i = 0xFFF10093; 
+    top->branchTaken_i = 0;
 
     tick();
 
-    //expect ALUCtrl to be ADD (0), NOT SUB (1)
+    //alu control should be 0 (add), not 1 (sub)
     EXPECT_EQ(top->ALUCtrl_o, 0b0000);
 
-    //basic I-Type checks
+    //check other signals
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUSrc_o, 1); // Immediate
+    EXPECT_EQ(top->ALUSrcB_o, 1);   //use immediate
+    EXPECT_EQ(top->ALUSrcA_o, 0);   //use register
+    EXPECT_EQ(top->ResultSrc_o, 0); 
+    EXPECT_EQ(top->ImmSrc_o, 0);    
 }
 
-//NH & AT: to fix
-//beq doesn't work properly 
-// Opcode: 1100011 (99 for BEQ)
-TEST_F(ControlUnitTestbench, Branch_ALU_Op)
-{
-    top->Instr_i = 0x00000063; // BEQ
-    top->Zero_i = 0;
-
-    tick();
-
-    // Expect ALUCtrl to be SUB (1), NOT ADD (0)
-    EXPECT_EQ(top->ALUCtrl_o, 0b0001);
-}
-
-//NH & AT: to fix
-//think this bug mostly comes from the fact you haven't been thinking about BEQ and zero flags in the typical way yet
-//verify that Branches compare Register vs Register (ALUSrc = 0).
-//comparing Register vs Immediate makes no sense for a standard BEQ.
-TEST_F(ControlUnitTestbench, Branch_ALUSrc)
-{
-    top->Instr_i = 0x00000063; // BEQ
-    top->Zero_i = 0;
-
-    tick();
-
-    // Expect ALUSrc to be 0 (Register B), NOT 1 (Immediate)
-    EXPECT_EQ(top->ALUSrc_o, 0);
-}
-
-// ============================================================
-// R-TYPE INSTRUCTION TESTS (Opcode 51 / 0x33)
-// ============================================================
-
-// Test R-Type ADD (funct3 = 000, funct7 = 00)
+//basic r-type add (funct3 = 000, funct7 = 0000000)
 TEST_F(ControlUnitTestbench, R_Type_ADD)
 {
-    // Op: 51, rd:1, rs1:1, rs2:1, f3:0, f7:0
-    top->Instr_i = 0x001080B3; 
+    //add x1, x2, x3
+    top->Instr_i = 0x003100B3; 
     tick();
 
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUSrc_o, 0);    // Register operands
-    EXPECT_EQ(top->ALUCtrl_o, 0);   // ADD
-    EXPECT_EQ(top->MemWrite_o, 0);
-    EXPECT_EQ(top->ResultSrc_o, 0); // ALU Result
+    EXPECT_EQ(top->ALUSrcB_o, 0);   //register operands
+    EXPECT_EQ(top->ALUCtrl_o, 0);   //add
 }
 
-// Test R-Type SUB (funct3 = 000, funct7 = 0x20 -> Bit 30 is 1)
+//r-type sub (funct3 = 000), checks if bit 30 triggers subtraction
 TEST_F(ControlUnitTestbench, R_Type_SUB)
 {
-    // Op: 51, f3: 0, Bit 30: 1 -> 0x40000033
-    top->Instr_i = 0x40000033; 
+    //sub x1, x2, x3. bit 30 is high (funct7 = 0100000)
+    top->Instr_i = 0x403100B3; 
     tick();
 
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUCtrl_o, 1);   // SUB
+    EXPECT_EQ(top->ALUSrcB_o, 0);   
+    EXPECT_EQ(top->ALUCtrl_o, 1);   //sub
 }
 
-// Test R-Type AND (funct3 = 111)
-TEST_F(ControlUnitTestbench, R_Type_AND)
+//ensure branches (opcode 99) compare reg vs reg, not reg vs imm
+TEST_F(ControlUnitTestbench, Branch_ALUSrc_Check)
 {
-    // Op: 51, f3: 7 -> 0x00007033
-    top->Instr_i = 0x00007033; 
+    top->Instr_i = 0x00000063; //beq (funct3 = 000)
     tick();
 
-    EXPECT_EQ(top->ALUCtrl_o, 2);   // AND (0010)
+    //alusrcb should be 0 for branches
+    EXPECT_EQ(top->ALUSrcB_o, 0); 
 }
 
-// ============================================================
-// I-TYPE ARITHMETIC TESTS (Opcode 19 / 0x13)
-// ============================================================
-
-// Test SLTI (Set Less Than Immediate)
-TEST_F(ControlUnitTestbench, I_Type_SLTI)
+//check pcsrc logic based on branchtaken input
+TEST_F(ControlUnitTestbench, BEQ_Taken_vs_NotTaken)
 {
-    // Op: 19, f3: 2 (SLT) -> 0x00002013
-    top->Instr_i = 0x00002013;
+    top->Instr_i = 0x00000063; //beq (funct3 = 000)
+    
+    //case 1: not taken
+    top->branchTaken_i = 0;
     tick();
-
-    EXPECT_EQ(top->ALUCtrl_o, 5);   // SLT (0101)
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Immediate
-    EXPECT_EQ(top->ImmSrc_o, 0);    // I-Type Immediate
+    EXPECT_EQ(top->PCSrc_o, 0);    //pc + 4
+    EXPECT_EQ(top->RegWrite_o, 0); 
+    EXPECT_EQ(top->ImmSrc_o, 2);   //b-type
+    
+    //case 2: taken
+    top->branchTaken_i = 1;
+    tick();
+    EXPECT_EQ(top->PCSrc_o, 1);    //pc + imm
 }
 
-// ============================================================
-// MEMORY ACCESS TESTS (Load: 3, Store: 35)
-// ============================================================
+//check if branch_o outputs correct encoding from funct3
+TEST_F(ControlUnitTestbench, Branch_Output_Encoding)
+{
+    //bne (funct3 = 001)
+    top->Instr_i = 0x00001063;
+    tick();
+    EXPECT_EQ(top->Branch_o, 0b001); 
 
-// Test LW (Load Word)
+    //blt (funct3 = 100)
+    top->Instr_i = 0x00004063;
+    tick();
+    EXPECT_EQ(top->Branch_o, 0b100); 
+}
+
+//load word test (opcode 3, funct3 = 010)
 TEST_F(ControlUnitTestbench, Instruction_LW)
 {
-    top->Instr_i = 0x00002003; // LW (Op 3)
+    //lw x1, 0(x2)
+    top->Instr_i = 0x00002003; 
+
     tick();
 
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Address = Reg + Imm
-    EXPECT_EQ(top->ALUCtrl_o, 0);   // ADD address calculation
+    EXPECT_EQ(top->ALUCtrl_o, 0);   //add for address calc
     EXPECT_EQ(top->MemWrite_o, 0);
-    EXPECT_EQ(top->ResultSrc_o, 1); // ReadData from Memory
-    EXPECT_EQ(top->ImmSrc_o, 0);    // I-Type Immediate
+    EXPECT_EQ(top->ResultSrc_o, 1); //from memory
+    EXPECT_EQ(top->ImmSrc_o, 0);    //i-type
+    
+    EXPECT_EQ(top->ALUSrcA_o, 0);   //reg
+    EXPECT_EQ(top->ALUSrcB_o, 1);   //imm
+    EXPECT_EQ(top->MemType_o, 0);   //word width (for funct3 = 010)
 }
 
-// Test SW (Store Word)
+//load byte unsigned (opcode 3, funct3 = 100), checking memsign
+TEST_F(ControlUnitTestbench, Instruction_LBU)
+{
+    //lbu x1, 0(x2)
+    top->Instr_i = 0x00014083;
+    tick();
+
+    EXPECT_EQ(top->RegWrite_o, 1);
+    //funct3 100 means memtype 01 and signed 1
+    EXPECT_EQ(top->MemType_o, 1);
+    EXPECT_EQ(top->MemSign_o, 1); 
+}
+
+//store word test (opcode 35, funct3 = 010)
 TEST_F(ControlUnitTestbench, Instruction_SW)
 {
-    top->Instr_i = 0x00002023; // SW (Op 35)
+    //sw x1, 0(x2)
+    top->Instr_i = 0x00112023; 
     tick();
 
-    EXPECT_EQ(top->RegWrite_o, 0);  // Don't write to reg file
-    EXPECT_EQ(top->MemWrite_o, 1);  // Write to memory
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Address = Reg + Imm
-    EXPECT_EQ(top->ALUCtrl_o, 0);   // ADD address calculation
-    EXPECT_EQ(top->ImmSrc_o, 1);    // S-Type Immediate (3'b001)
+    EXPECT_EQ(top->RegWrite_o, 0); 
+    EXPECT_EQ(top->MemWrite_o, 1); 
+    EXPECT_EQ(top->ALUSrcB_o, 1);    
+    EXPECT_EQ(top->ImmSrc_o, 1);    //s-type
 }
 
-// ============================================================
-// BRANCHING LOGIC TESTS (Opcode 99 / 0x63)
-// ============================================================
-
-// Test BEQ when Not Taken (Zero_i = 0)
-TEST_F(ControlUnitTestbench, BEQ_NotTaken)
-{
-    top->Instr_i = 0x00000063; // BEQ
-    top->Zero_i = 0;           // ALU Result != 0 (Not Equal)
-    tick();
-
-    EXPECT_EQ(top->PCSrc_o, 0);     // PC = PC + 4
-    EXPECT_EQ(top->RegWrite_o, 0);
-    EXPECT_EQ(top->ImmSrc_o, 2);    // B-Type Immediate (3'b010)
-}
-
-// Test BEQ when Taken (Zero_i = 1)
-TEST_F(ControlUnitTestbench, BEQ_Taken)
-{
-    top->Instr_i = 0x00000063; // BEQ
-    top->Zero_i = 1;           // ALU Result == 0 (Equal)
-    tick();
-
-    EXPECT_EQ(top->PCSrc_o, 1);     // PC = PC + Imm
-    EXPECT_EQ(top->RegWrite_o, 0);
-}
-
-// ============================================================
-// JUMP TESTS (JAL: 111, JALR: 103)
-// ============================================================
-
-// Test JAL (Jump And Link)
+//jal test (opcode 111)
 TEST_F(ControlUnitTestbench, Instruction_JAL)
 {
-    top->Instr_i = 0x0000006F; // JAL (Op 111)
+    top->Instr_i = 0x0000006F; 
     tick();
 
-    EXPECT_EQ(top->PCSrc_o, 1);     // Always Jump
-    EXPECT_EQ(top->RegWrite_o, 1);  // Save PC+4
-    EXPECT_EQ(top->ResultSrc_o, 2); // Source is PC+4 (2'b10)
-    EXPECT_EQ(top->ImmSrc_o, 4);    // J-Type Imm (3'b100)
+    EXPECT_EQ(top->PCSrc_o, 1);     //always jump
+    EXPECT_EQ(top->RegWrite_o, 1);  //save pc+4
+    EXPECT_EQ(top->ResultSrc_o, 2); 
+    EXPECT_EQ(top->ImmSrc_o, 4);    //j-type
+    EXPECT_EQ(top->JumpSrc_o, 0);   //0 for jal
 }
 
-// Test JALR (Jump And Link Register)
-// NOTE: This assumes the datapath logic limitation mentioned previously 
-// is handled or ignored. We check control signals generated.
+//jalr test (opcode 103, funct3 = 000)
 TEST_F(ControlUnitTestbench, Instruction_JALR)
 {
-    top->Instr_i = 0x00000067; // JALR (Op 103)
+    top->Instr_i = 0x00010067; 
     tick();
 
-    EXPECT_EQ(top->PCSrc_o, 1);     // Jump
-    EXPECT_EQ(top->RegWrite_o, 1);  // Save PC+4
-    EXPECT_EQ(top->ResultSrc_o, 2); // Source is PC+4
-    EXPECT_EQ(top->ALUSrc_o, 1);    // Add Imm to Reg
-    EXPECT_EQ(top->ImmSrc_o, 0);    // I-Type Imm
+    EXPECT_EQ(top->PCSrc_o, 1);     
+    EXPECT_EQ(top->RegWrite_o, 1);  
+    EXPECT_EQ(top->ResultSrc_o, 2); 
+    EXPECT_EQ(top->ALUSrcB_o, 1);   
+    EXPECT_EQ(top->ImmSrc_o, 0);    //i-type
+    EXPECT_EQ(top->JumpSrc_o, 1);   //1 for jalr
 }
 
-// ============================================================
-// MAIN
-// ============================================================
+//lui test (opcode 55)
+TEST_F(ControlUnitTestbench, Instruction_LUI)
+{
+    top->Instr_i = 0x000000B7;
+    tick();
+
+    EXPECT_EQ(top->RegWrite_o, 1);
+    EXPECT_EQ(top->ImmSrc_o, 3);    //u-type
+    EXPECT_EQ(top->ALUSrcB_o, 1);
+    EXPECT_EQ(top->ALUSrcA_o, 0);   
+}
+
+//auipc test (opcode 23)
+TEST_F(ControlUnitTestbench, Instruction_AUIPC)
+{
+    top->Instr_i = 0x00000017;
+    tick();
+
+    EXPECT_EQ(top->RegWrite_o, 1);
+    EXPECT_EQ(top->ImmSrc_o, 3);    
+    EXPECT_EQ(top->ALUSrcA_o, 1);   //use pc
+}
 
 int main(int argc, char **argv)
 {
