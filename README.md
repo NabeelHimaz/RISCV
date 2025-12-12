@@ -241,7 +241,7 @@ The pipelined implementation supports the full RV32I instruction set, dividing t
 5. **Writeback (W)**: Writes results back to register file
 
 ## Schematic
-![RISC-V 32I Pipelined implementation](images/Pipelined_schematic.png)
+![RISC-V 32I Pipelined implementation](images/Pipelined_schematic.jpeg)
 
 ## Contributions
 
@@ -473,9 +473,6 @@ The complete system integration for a RISC-V project involves implementing all i
 Here, we integrate a cache system to enhance memory access speed and reduce latency (seen in the `cache` branch). 
 Pipelining is incorporated to improve throughput by enabling the concurrent execution of multiple instructions (from `pipelined` branch).  
 The design ensures that each component, including the cache and pipeline, operates cohesively for optimal performance. This integration results in a high-performance RISC-V processor capable of handling complex tasks efficiently.
-
-## Schematic
-![RISC-V 32I Pipelined + Cache implementation](images/Pipelined_schematic.jpeg)
 
 ## Contributions
 
