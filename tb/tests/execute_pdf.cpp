@@ -19,6 +19,7 @@
 #define FAST_FORWARD_THRESHOLD 123500
 //noisy #define FAST_FORWARD_THRESHOLD 204700
 //triangle #define FAST_FORWARD_THRESHOLD 317000
+//sine #define FAST_FORWARD_THRESHOLD 38500
 
 class PdfTestbench : public ::testing::Test {
 public:
