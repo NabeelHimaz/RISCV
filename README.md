@@ -207,23 +207,20 @@ For the tests provided (`1_addi_bne` `2_li_add` `3_lbu_sb` `4_jal_ret` `5_pdf`):
 ![Single cycle testing](/images/single-cycle-tests.png)
 
 ### F1
-![Video for F1 lights](https://github.com/NabeelHimaz/RISCV/blob/main/images/vbuddy_tests/f1.mp4)
+<video src="https://github.com/NabeelHimaz/RISCV/raw/main/images/vbuddy_tests/f1.mp4" controls="controls" style="max-width: 730px;">
+</video>
 
 ### PDF: Gaussian
-![Video for PDF: Gaussian Test](images/vbuddy_tests/PDF-Gaussian.gif)
-
-[Link to Video (Higher quality)](images/vbuddy_tests/PDF-Gaussian.mp4)
+<video src="https://github.com/NabeelHimaz/RISCV/raw/main/images/vbuddy_tests/gaussian.mp4" controls="controls" style="max-width: 730px;">
+</video>
 
 ### PDF: Noisy
-![Video for PDF: Noisy test](images/vbuddy_tests/PDF-Noisy.gif)
-
-[Link to Video (Higher Quality)](images/vbuddy_tests/PDF-Noisy.mp4)
+<video src="https://github.com/NabeelHimaz/RISCV/raw/main/images/vbuddy_tests/noisy.mp4" controls="controls" style="max-width: 730px;">
+</video>
 
 ### PDF: Triangle
-![Video for PDF: Triangle test](images/vbuddy_tests/PDF-Triangle.gif)
-
-[Link to Video (Higher Quality)](/images/vbuddy_tests/PDF-Triangle.mp4)
-
+<video src="https://github.com/NabeelHimaz/RISCV/raw/main/images/vbuddy_tests/triangle.mp4" controls="controls" style="max-width: 730px;">
+</video>
 ---
 # Pipelined RISC-V CPU
 
