@@ -51,9 +51,9 @@ cd tb
 
 You will be given the option to execute:
 
-- **Unit tests** (testbenches we have written to verify the logic of individual modules).
-- **Program tests** (verifies execution of test programs to ensure the processor meets requirements).
-- **Both** (to run all test files).
+- **Unit Tests** (testbenches we have written to verify the logic of individual modules).
+- **Program Tests** (verifies execution of test programs to ensure the processor meets requirements).
+- **Vbuddy Tests** (to run files with Vbuddy hardware integration implemented).
 
 The distribution for the pdf test can be changed by overwriting the distribution name.
 
@@ -63,20 +63,21 @@ To do this in `./tb/program_tests/verify.cpp`, change line 43.
 setData("reference/gaussian.mem");
 ```
 
-To do this in `./tb/program_tests/execute_pdf.cpp`, change line 144.
+To do this in `./tb/vbuddy_tests/execute_pdf.cpp`, change line 144.
 ```cpp
 // can change to "noisy", "triangle", or "sine"
 tb.setData("reference/gaussian.mem");
 ```
 The execute_pdf.cpp program also allows you to skip vbuddy clock cycle plotting to a specific target in order to save execution time. The suggested thresholds for each datasource are hardcoded in lines 18-22. Uncomment the appropriate line depending on your datasource.
 
-For unit testing each module, we run:
+For unit testing modules individually, we run:
 ```bash
 cd tb
 ./doit.sh unit_tests/<"test name">.cpp
 ```
 This will run the individual unit tests.
 
+The same syntax applies for running any testbench in any folder, and the doit.sh can handle multiple .cpp files as arguments. Simply enter them one after another, seperated by a space.
 
 #### Quick Start - Vbuddy Tests
 
@@ -176,10 +177,12 @@ Since we knew we would be implementing pipelining soon, we divided our top into 
 
 The processor development is done in the register transfer level (`rtl`) folder and the testing is performed in the test bench folder (`tb`).
 The test bench folder contains:
-- Assembly files (1 to 5 provided and f1_fsm) - in later versions
+- Assembly files (1 to 5 provided and f1.s)
 - `assemble.sh` - translating RISCV assembly to machine code
-- `vbuddy_test` - Tests creating to verify RISCV performance with VBuddy (provided)
-Other files are either a result of these files (testing outputs e.g. `*.vcd`) or were provided.
+- `doit.sh` - master script that handles the top level execution of the unit tests and test programs.
+- Unit tests
+- Program tests
+- Vbuddy tests
 
 Note: only for this version, is the `tb` folder shown, this contains the tests and shows all other execution files
 
@@ -203,7 +206,8 @@ Instructions implemented:
 
 For the tests provided (`1_addi_bne` `2_li_add` `3_lbu_sb` `4_jal_ret` `5_pdf`):
 
-![Single cycle testing](/images/single-cycle-tests.png)
+### Single cycle testing
+![single cycle tb program 1-5 testing](images/5_tests_programs_singlecycle.png)
 
 ### F1
 https://github.com/user-attachments/assets/d6e40790-56d4-4d95-b67c-37f45b6d86d5
