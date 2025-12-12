@@ -210,13 +210,16 @@ For the tests provided (`1_addi_bne` `2_li_add` `3_lbu_sb` `4_jal_ret` `5_pdf`):
 https://github.com/user-attachments/assets/d6e40790-56d4-4d95-b67c-37f45b6d86d5
 
 ### PDF: Gaussian
-https://github.com/user-attachments/assets/c18e19b5-2e89-4f9f-8915-e8809ecf23ba
+https://github.com/user-attachments/assets/78df51d1-e5ad-4024-bef0-96da9c50b70a
 
 ### PDF: Noisy
 https://github.com/user-attachments/assets/eef1a4e2-7991-4c1d-afa6-7ff94e41b589
 
 ### PDF: Triangle
 https://github.com/user-attachments/assets/07633f81-343f-42c6-8fd5-e5dfc97a4d0a
+
+### PDF: Sine
+https://github.com/user-attachments/assets/fc73e31b-ed6a-421a-bb6c-efd21d2088e7
 
 ---
 # Pipelined RISC-V CPU
