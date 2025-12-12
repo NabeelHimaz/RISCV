@@ -567,6 +567,68 @@ Pipeline registers maintain signal integrity while allowing each stage to operat
 
 ---
 
+## Superscalar Implementation
+
+![Schematic](./images/superscalarschematic.jpg)
+
+Due to time constraints, the superscalar implementation focuses on a subset of the RISC-V instruction set, specifically R-type and I-type ALU instructions. This decision allowed for a cleaner implementation while demonstrating the core principles of dual-issue execution.
+
+### Implementation 
+
+**Supported Instructions:**
+- R-type: ADD, SUB, AND, OR, XOR, SLL, SRL, SRA, SLT, SLTU
+- I-type ALU: ADDI, ANDI, ORI, XORI, SLLI, SRLI, SRAI, SLTI, SLTIU
+
+**Architectural Simplifications:**
+- No memory operations (loads/stores) - eliminates data memory and associated hazards
+- No branches or jumps - removes control hazard complexity
+- Simplified datapath focused on register-to-register operations
+
+### Design Benefits
+
+This reduced instruction set enabled:
+1. **Cleaner dual-issue logic** - both ALUs can operate independently without memory port conflicts
+2. **Simplified hazard detection** - only RAW (Read-After-Write) hazards between register operations
+3. **Streamlined dependency checking** - no load-use hazards or memory ordering concerns
+
+### Hardware Implementation
+
+Key components for dual-issue execution:
+- **Dual ALUs** - Two independent arithmetic/logic units for parallel computation
+- **Register File** - Four read ports (two per instruction) and two write ports
+- **Instruction Fetch** - Fetches two instructions per cycle
+- **Result Writeback** - Simultaneous writes to different destination registers
+
+### Future Extensions
+
+Given more time, I would like to extend the implementation to:
+
+**Full Instruction Set:**
+- Load/store operations with dual-ported data memory
+- Branch prediction for control flow instructions
+- Jump instructions with return address handling
+
+**Advanced Pipeline Features:**
+- Out-of-order execution for better instruction-level parallelism
+- Register renaming to eliminate WAW (Write-After-Write) hazards
+- Reservation stations for flexible instruction scheduling
+
+**Performance Enhancements:**
+- Branch prediction (2-bit saturating counter or branch target buffer)
+- Speculative execution beyond branches
+- Dynamic hazard resolution with instruction reordering
+
+This would present exciting challenges in managing:
+- Memory port conflicts when both instructions access memory
+- Control hazards with dual instruction fetch
+- Load-use hazards in a superscalar context
+- Maintaining precise exceptions with out-of-order completion
+
+The current implementation serves as a demonstration to show the viability of dual-issue execution, with clear pathways for future enhancement to a complete superscalar RISC-V processor.
+
+---
+
+
 # Learnings and Project Summary
 
 Working on the mainly of the Control Unit and the Hazard Unit helped me gain a strong understanding on how all the components withing the CPU work together. To construct the Control Unit, I had to fully understand the RISCV instruction set architecture and the control/data path. Creating the Hazard Unit deepened my understanding of pipelining and the critical importance of correctly managing data dependencies.
