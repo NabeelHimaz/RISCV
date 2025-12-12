@@ -89,11 +89,15 @@ for file in "${files[@]}"; do
     # Build C++ project with automatically generated Makefile
     make -j -C obj_dir/ -f Vdut.mk > /dev/null
     
-    # Run executable simulation file
-    ./obj_dir/Vdut
-    
+    # Run executable simulation file and capture output
+    simulation_output=$(./obj_dir/Vdut --gtest_color=yes 2>&1)
+    exit_code=$?
+
+    # Print the output and filter out false memory preload warning
+    echo "$simulation_output" | grep -v "%Warning: data.hex:0: \$readmem file not found"
+
     # Check if the test succeeded or not
-    if [ $? -eq 0 ]; then
+    if [ $exit_code -eq 0 ]; then
         ((passes++))
     else
         ((fails++))
